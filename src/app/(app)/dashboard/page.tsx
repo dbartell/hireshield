@@ -1,5 +1,3 @@
-"use client"
-
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,30 +6,15 @@ import {
   ClipboardCheck, GraduationCap, Users, ArrowRight, 
   TrendingUp, Calendar
 } from "lucide-react"
+import { getDashboardData } from "@/lib/actions/dashboard"
 
-// Mock data - would come from Supabase in production
-const mockData = {
-  companyName: "Acme Corp",
-  complianceScore: 65,
-  statesActive: ["IL", "CA", "CO"],
-  toolsCount: 4,
-  documentsGenerated: 3,
-  trainingCompleted: 2,
-  trainingTotal: 5,
-  consentRecords: 47,
-  lastAudit: "2026-01-15",
-  upcomingDeadlines: [
-    { state: "Illinois", law: "HB 3773", date: "2026-01-01", status: "passed" },
-    { state: "Colorado", law: "AI Act", date: "2026-02-01", status: "upcoming" },
-  ],
-  recentActivity: [
-    { action: "Generated disclosure notice", time: "2 hours ago" },
-    { action: "Completed audit questionnaire", time: "1 day ago" },
-    { action: "Added new AI tool: HireVue", time: "3 days ago" },
-  ]
-}
+export default async function DashboardPage() {
+  const data = await getDashboardData()
 
-export default function DashboardPage() {
+  if (!data) {
+    return <div className="p-8">Loading...</div>
+  }
+
   const getRiskLevel = (score: number) => {
     if (score >= 80) return { level: "Good", color: "text-green-600", bg: "bg-green-100" }
     if (score >= 60) return { level: "Fair", color: "text-yellow-600", bg: "bg-yellow-100" }
@@ -39,7 +22,13 @@ export default function DashboardPage() {
     return { level: "Critical", color: "text-red-600", bg: "bg-red-100" }
   }
 
-  const risk = getRiskLevel(mockData.complianceScore)
+  const risk = getRiskLevel(data.complianceScore)
+
+  // State compliance deadlines
+  const upcomingDeadlines = [
+    { state: "Illinois", law: "HB 3773", date: "2026-01-01", status: "passed" },
+    { state: "Colorado", law: "AI Act", date: "2026-02-01", status: "upcoming" },
+  ]
 
   return (
     <div className="p-8">
@@ -60,7 +49,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-8">
               <div className={`w-32 h-32 rounded-full ${risk.bg} flex items-center justify-center`}>
                 <div className="text-center">
-                  <div className={`text-4xl font-bold ${risk.color}`}>{mockData.complianceScore}</div>
+                  <div className={`text-4xl font-bold ${risk.color}`}>{data.complianceScore}</div>
                   <div className={`text-sm font-medium ${risk.color}`}>{risk.level}</div>
                 </div>
               </div>
@@ -69,28 +58,30 @@ export default function DashboardPage() {
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>Audit Complete</span>
-                      <span className="text-green-600">✓</span>
+                      <span className={data.latestAudit ? "text-green-600" : "text-gray-400"}>
+                        {data.latestAudit ? "✓" : "—"}
+                      </span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: "100%" }} />
+                      <div className="h-2 bg-green-500 rounded-full" style={{ width: data.latestAudit ? "100%" : "0%" }} />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>Documents Generated</span>
-                      <span>{mockData.documentsGenerated}/5</span>
+                      <span>{data.documentsCount}/5</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-blue-500 rounded-full" style={{ width: "60%" }} />
+                      <div className="h-2 bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (data.documentsCount / 5) * 100)}%` }} />
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>Training Complete</span>
-                      <span>{mockData.trainingCompleted}/{mockData.trainingTotal}</span>
+                      <span>{data.trainingCompleted}/{data.trainingTotal}</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-purple-500 rounded-full" style={{ width: "40%" }} />
+                      <div className="h-2 bg-purple-500 rounded-full" style={{ width: `${(data.trainingCompleted / data.trainingTotal) * 100}%` }} />
                     </div>
                   </div>
                 </div>
@@ -133,14 +124,14 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Regulated States</p>
-                <p className="text-2xl font-bold">{mockData.statesActive.length}</p>
+                <p className="text-2xl font-bold">{data.hiringStates.length}</p>
               </div>
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Shield className="w-5 h-5 text-blue-600" />
               </div>
             </div>
             <div className="mt-2 text-xs text-gray-600">
-              {mockData.statesActive.join(", ")}
+              {data.hiringStates.length > 0 ? data.hiringStates.join(", ") : "None selected"}
             </div>
           </CardContent>
         </Card>
@@ -150,14 +141,14 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">AI Tools Tracked</p>
-                <p className="text-2xl font-bold">{mockData.toolsCount}</p>
+                <p className="text-2xl font-bold">{data.toolsCount}</p>
               </div>
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
             </div>
             <div className="mt-2 text-xs text-green-600">
-              All tools audited
+              {data.toolsCount > 0 ? "Tools registered" : "Add your tools"}
             </div>
           </CardContent>
         </Card>
@@ -167,14 +158,14 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Documents</p>
-                <p className="text-2xl font-bold">{mockData.documentsGenerated}</p>
+                <p className="text-2xl font-bold">{data.documentsCount}</p>
               </div>
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-purple-600" />
               </div>
             </div>
             <div className="mt-2 text-xs text-gray-600">
-              2 pending review
+              Generated
             </div>
           </CardContent>
         </Card>
@@ -184,7 +175,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Consent Records</p>
-                <p className="text-2xl font-bold">{mockData.consentRecords}</p>
+                <p className="text-2xl font-bold">{data.consentCount}</p>
               </div>
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                 <Users className="w-5 h-5 text-orange-600" />
@@ -209,7 +200,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockData.upcomingDeadlines.map((deadline, i) => (
+              {upcomingDeadlines.map((deadline, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <div className="font-medium">{deadline.state}</div>
@@ -233,34 +224,50 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
+        {/* Recent Documents */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>Recent Documents</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockData.recentActivity.map((activity, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                  <div className="flex-1">
-                    <div className="text-sm">{activity.action}</div>
-                    <div className="text-xs text-gray-600">{activity.time}</div>
+            {data.recentDocs && data.recentDocs.length > 0 ? (
+              <div className="space-y-4">
+                {data.recentDocs.map((doc) => (
+                  <div key={doc.id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{doc.title}</div>
+                      <div className="text-xs text-gray-600">
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-            <Link href="/audit">
-              <Button variant="link" className="mt-4 p-0">
-                View all activity <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No documents yet</p>
+                <Link href="/documents">
+                  <Button variant="link" size="sm">Generate your first document</Button>
+                </Link>
+              </div>
+            )}
+            {data.recentDocs && data.recentDocs.length > 0 && (
+              <Link href="/documents">
+                <Button variant="link" className="mt-4 p-0">
+                  View all documents <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Alert Banner */}
-      {mockData.complianceScore < 80 && (
+      {data.complianceScore < 80 && (
         <Card className="mt-6 border-orange-200 bg-orange-50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">

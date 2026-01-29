@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, AlertTriangle, ArrowRight, ArrowLeft, Download, FileText } from "lucide-react"
+import { CheckCircle, AlertTriangle, ArrowRight, ArrowLeft, Download, FileText, History, Loader2 } from "lucide-react"
 import { allStates, regulatedStates, stateRequirements } from "@/data/states"
 import { aiHiringTools, usageTypes } from "@/data/tools"
+import { saveAudit, getAuditHistory } from "@/lib/actions/audit"
+import Link from "next/link"
 
 type AuditStep = 'states' | 'tools' | 'usage' | 'results'
 
@@ -15,6 +17,20 @@ interface AuditData {
   usages: string[]
 }
 
+interface AuditRecord {
+  id: string
+  created_at: string
+  risk_score: number
+  status: string
+  audit_findings: Array<{
+    id: string
+    state_code: string
+    finding_type: string
+    severity: string
+    remediation: string
+  }>
+}
+
 export default function AuditPage() {
   const [step, setStep] = useState<AuditStep>('states')
   const [data, setData] = useState<AuditData>({
@@ -22,6 +38,24 @@ export default function AuditPage() {
     tools: [],
     usages: []
   })
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [auditHistory, setAuditHistory] = useState<AuditRecord[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  const loadHistory = async () => {
+    setLoadingHistory(true)
+    const history = await getAuditHistory()
+    setAuditHistory(history)
+    setLoadingHistory(false)
+  }
+
+  useEffect(() => {
+    if (showHistory) {
+      loadHistory()
+    }
+  }, [showHistory])
 
   const goToStep = (newStep: AuditStep) => {
     setStep(newStep)
@@ -47,7 +81,6 @@ export default function AuditPage() {
         if (stateReq) {
           riskScore += 20
           
-          // Check for high-risk usages
           const highRiskUsages = ['screening', 'ranking', 'interview-analysis', 'termination']
           const hasHighRisk = data.usages.some(u => highRiskUsages.includes(u))
           
@@ -95,13 +128,127 @@ export default function AuditPage() {
 
   const { riskScore, findings } = calculateResults()
 
+  const handleSaveAudit = async () => {
+    setSaving(true)
+    const result = await saveAudit({
+      states: data.states,
+      tools: data.tools,
+      usages: data.usages,
+      riskScore,
+      findings,
+    })
+    setSaving(false)
+    if (!result.error) {
+      setSaved(true)
+    }
+  }
+
+  const startNewAudit = () => {
+    setData({ states: [], tools: [], usages: [] })
+    setSaved(false)
+    setShowHistory(false)
+    goToStep('states')
+  }
+
+  if (showHistory) {
+    return (
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Audit History</h1>
+              <p className="text-gray-600">View your previous compliance audits</p>
+            </div>
+            <Button onClick={() => setShowHistory(false)}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Audit
+            </Button>
+          </div>
+
+          {loadingHistory ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600">Loading audit history...</p>
+              </CardContent>
+            </Card>
+          ) : auditHistory.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <History className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="font-medium text-lg mb-2">No audits yet</h3>
+                <p className="text-gray-600 mb-4">Run your first compliance audit to get started</p>
+                <Button onClick={() => setShowHistory(false)}>Run Audit</Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {auditHistory.map((audit) => (
+                <Card key={audit.id}>
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">
+                          Audit - {new Date(audit.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {audit.audit_findings?.length || 0} findings
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className={`text-2xl font-bold ${
+                          audit.risk_score > 50 ? 'text-red-600' : 
+                          audit.risk_score > 25 ? 'text-yellow-600' : 
+                          'text-green-600'
+                        }`}>
+                          {audit.risk_score}
+                        </div>
+                        <span className="text-xs text-gray-500">Risk Score</span>
+                      </div>
+                    </div>
+                    {audit.audit_findings && audit.audit_findings.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="text-sm font-medium mb-2">Findings:</div>
+                        <div className="space-y-2">
+                          {audit.audit_findings.slice(0, 3).map((finding) => (
+                            <div key={finding.id} className="flex items-center gap-2 text-sm">
+                              <span className={`w-2 h-2 rounded-full ${
+                                finding.severity === 'high' ? 'bg-red-500' :
+                                finding.severity === 'medium' ? 'bg-yellow-500' :
+                                'bg-green-500'
+                              }`} />
+                              <span className="text-gray-600">{finding.finding_type}</span>
+                            </div>
+                          ))}
+                          {audit.audit_findings.length > 3 && (
+                            <div className="text-xs text-gray-500">
+                              +{audit.audit_findings.length - 3} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Compliance Audit</h1>
-          <p className="text-gray-600">Assess your AI hiring tools against state regulations</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Compliance Audit</h1>
+            <p className="text-gray-600">Assess your AI hiring tools against state regulations</p>
+          </div>
+          <Button variant="outline" onClick={() => setShowHistory(true)}>
+            <History className="w-4 h-4 mr-2" /> View History
+          </Button>
         </div>
 
         {/* Progress */}
@@ -319,31 +466,62 @@ export default function AuditPage() {
                 <CardTitle>Next Steps</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Button className="h-auto py-4" variant="outline">
-                    <div className="flex items-center gap-3">
-                      <Download className="w-5 h-5" />
-                      <div className="text-left">
-                        <div className="font-medium">Download Report</div>
-                        <div className="text-xs text-gray-600">PDF audit summary</div>
-                      </div>
+                {saved ? (
+                  <div className="text-center py-6">
+                    <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                    <h3 className="font-medium text-lg mb-2">Audit Saved!</h3>
+                    <p className="text-gray-600 mb-4">Your audit has been saved to your account.</p>
+                    <div className="flex gap-3 justify-center">
+                      <Link href="/documents">
+                        <Button>
+                          <FileText className="w-4 h-4 mr-2" />
+                          Generate Documents
+                        </Button>
+                      </Link>
+                      <Button variant="outline" onClick={startNewAudit}>
+                        Run New Audit
+                      </Button>
                     </div>
-                  </Button>
-                  <Button className="h-auto py-4">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5" />
-                      <div className="text-left">
-                        <div className="font-medium">Generate Documents</div>
-                        <div className="text-xs text-gray-600">Create compliance documents</div>
-                      </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <Button 
+                        className="h-auto py-4" 
+                        onClick={handleSaveAudit}
+                        disabled={saving}
+                      >
+                        <div className="flex items-center gap-3">
+                          {saving ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Download className="w-5 h-5" />
+                          )}
+                          <div className="text-left">
+                            <div className="font-medium">
+                              {saving ? 'Saving...' : 'Save Audit'}
+                            </div>
+                            <div className="text-xs opacity-80">Save to your account</div>
+                          </div>
+                        </div>
+                      </Button>
+                      <Link href="/documents">
+                        <Button className="h-auto py-4 w-full" variant="outline">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5" />
+                            <div className="text-left">
+                              <div className="font-medium">Generate Documents</div>
+                              <div className="text-xs text-gray-600">Create compliance documents</div>
+                            </div>
+                          </div>
+                        </Button>
+                      </Link>
                     </div>
-                  </Button>
-                </div>
-                <div className="mt-4">
-                  <Button variant="outline" onClick={() => goToStep('states')}>
-                    <ArrowLeft className="mr-2 w-4 h-4" /> Run New Audit
-                  </Button>
-                </div>
+                    <Button variant="outline" onClick={() => goToStep('states')}>
+                      <ArrowLeft className="mr-2 w-4 h-4" /> Start Over
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

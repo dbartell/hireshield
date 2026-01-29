@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Download, Eye, Plus, CheckCircle, Clock, AlertTriangle } from "lucide-react"
+import { FileText, Download, Eye, Plus, CheckCircle, Clock, AlertTriangle, Trash2, Loader2, X } from "lucide-react"
+import { getDocuments, createDocument, deleteDocument, getDocumentTemplate, getOrganizationInfo } from "@/lib/actions/documents"
 
 const documentTypes = [
   {
@@ -11,72 +12,152 @@ const documentTypes = [
     name: "Candidate Disclosure Notice",
     description: "Notify job candidates that AI is used in the hiring process",
     states: ["IL", "CA", "CO", "NYC"],
-    icon: FileText
   },
   {
     id: "disclosure-employee",
     name: "Employee Disclosure Notice",
     description: "Notify employees about AI use in employment decisions",
     states: ["IL", "CA", "CO"],
-    icon: FileText
   },
   {
     id: "consent-form",
     name: "Candidate Consent Form",
     description: "Collect candidate consent for AI processing",
     states: ["CA", "CO"],
-    icon: FileText
   },
   {
     id: "handbook-policy",
     name: "Employee Handbook Policy",
     description: "AI use policy section for employee handbook",
     states: ["IL", "CA", "CO"],
-    icon: FileText
   },
   {
     id: "impact-assessment",
     name: "Impact Assessment",
     description: "Document AI system impact for Colorado compliance",
     states: ["CO"],
-    icon: FileText
   },
   {
     id: "bias-audit-disclosure",
     name: "Bias Audit Disclosure",
     description: "Public disclosure page for NYC AEDT bias audit",
     states: ["NYC"],
-    icon: FileText
   }
 ]
 
-const generatedDocs = [
-  {
-    id: "1",
-    name: "Candidate Disclosure Notice - Illinois",
-    type: "disclosure-candidate",
-    createdAt: "2026-01-15",
-    status: "active"
-  },
-  {
-    id: "2",
-    name: "Employee Handbook Policy",
-    type: "handbook-policy",
-    createdAt: "2026-01-10",
-    status: "draft"
-  },
-  {
-    id: "3",
-    name: "Impact Assessment - Colorado",
-    type: "impact-assessment",
-    createdAt: "2026-01-08",
-    status: "review"
-  }
-]
+interface Doc {
+  id: string
+  title: string
+  doc_type: string
+  content: string
+  created_at: string
+  version: number
+}
 
 export default function DocumentsPage() {
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [showGenerator, setShowGenerator] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [documents, setDocuments] = useState<Doc[]>([])
+  const [loading, setLoading] = useState(true)
+  const [viewDoc, setViewDoc] = useState<Doc | null>(null)
+  const [editorContent, setEditorContent] = useState("")
+  const [editorTitle, setEditorTitle] = useState("")
+  const [showEditor, setShowEditor] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadDocuments()
+  }, [])
+
+  const loadDocuments = async () => {
+    setLoading(true)
+    const docs = await getDocuments()
+    setDocuments(docs)
+    setLoading(false)
+  }
+
+  const handleGenerateDocument = async () => {
+    if (!selectedType) return
+
+    setGenerating(true)
+    const template = await getDocumentTemplate(selectedType)
+    const org = await getOrganizationInfo()
+
+    if (template) {
+      const today = new Date().toISOString().split('T')[0]
+      let content = template.content
+        .replace(/\[COMPANY_NAME\]/g, org?.name || 'Your Company')
+        .replace(/\[DATE\]/g, today)
+        .replace(/\[CONTACT_EMAIL\]/g, 'hr@yourcompany.com')
+        .replace(/\[APPLICABLE_LAWS\]/g, template.states.map(s => {
+          switch(s) {
+            case 'IL': return 'Illinois HB 3773'
+            case 'CA': return 'California CCPA'
+            case 'CO': return 'Colorado AI Act'
+            case 'NYC': return 'NYC Local Law 144'
+            default: return s
+          }
+        }).join(', '))
+
+      setEditorTitle(`${template.name}${org?.name ? ` - ${org.name}` : ''}`)
+      setEditorContent(content)
+      setShowEditor(true)
+      setShowGenerator(false)
+    }
+    setGenerating(false)
+  }
+
+  const handleSaveDocument = async () => {
+    if (!selectedType || !editorTitle || !editorContent) return
+
+    setGenerating(true)
+    const result = await createDocument(selectedType, editorTitle, editorContent)
+    
+    if (!result.error) {
+      await loadDocuments()
+      setShowEditor(false)
+      setEditorContent("")
+      setEditorTitle("")
+      setSelectedType(null)
+    }
+    setGenerating(false)
+  }
+
+  const handleDeleteDocument = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) return
+    
+    setDeleting(id)
+    await deleteDocument(id)
+    await loadDocuments()
+    setDeleting(null)
+  }
+
+  const handleDownloadPdf = async (doc: Doc) => {
+    // Dynamic import for client-side only
+    const html2pdf = (await import('html2pdf.js')).default
+    
+    const element = document.createElement('div')
+    element.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px;">
+        <h1 style="font-size: 24px; margin-bottom: 20px;">${doc.title}</h1>
+        <div style="white-space: pre-wrap; line-height: 1.6;">${doc.content}</div>
+        <div style="margin-top: 40px; color: #666; font-size: 12px;">
+          Generated by HireShield • ${new Date(doc.created_at).toLocaleDateString()}
+        </div>
+      </div>
+    `
+    
+    const opt = {
+      margin: 10,
+      filename: `${doc.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+    }
+    
+    html2pdf().set(opt).from(element).save()
+  }
 
   return (
     <div className="p-8">
@@ -111,7 +192,7 @@ export default function DocumentsPage() {
                         : 'bg-white border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <docType.icon className="w-6 h-6 text-blue-600 mb-2" />
+                    <FileText className="w-6 h-6 text-blue-600 mb-2" />
                     <div className="font-medium">{docType.name}</div>
                     <div className="text-xs text-gray-600 mt-1">{docType.description}</div>
                     <div className="flex gap-1 mt-2">
@@ -125,15 +206,112 @@ export default function DocumentsPage() {
                 ))}
               </div>
               <div className="flex gap-3 mt-6">
-                <Button variant="outline" onClick={() => setShowGenerator(false)}>
+                <Button variant="outline" onClick={() => {
+                  setShowGenerator(false)
+                  setSelectedType(null)
+                }}>
                   Cancel
                 </Button>
-                <Button disabled={!selectedType}>
-                  Continue to Generator
+                <Button 
+                  disabled={!selectedType || generating}
+                  onClick={handleGenerateDocument}
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    'Generate Document'
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Document Editor */}
+        {showEditor && (
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Edit Document</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setShowEditor(false)
+                  setEditorContent("")
+                  setEditorTitle("")
+                }}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Document Title</label>
+                  <input
+                    type="text"
+                    value={editorTitle}
+                    onChange={(e) => setEditorTitle(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Content</label>
+                  <textarea
+                    value={editorContent}
+                    onChange={(e) => setEditorContent(e.target.value)}
+                    rows={20}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => {
+                    setShowEditor(false)
+                    setEditorContent("")
+                    setEditorTitle("")
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveDocument} disabled={generating}>
+                    {generating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Document'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* View Document Modal */}
+        {viewDoc && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-3xl max-h-[80vh] overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>{viewDoc.title}</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setViewDoc(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="overflow-y-auto max-h-[60vh]">
+                <pre className="whitespace-pre-wrap font-sans text-sm">{viewDoc.content}</pre>
+              </CardContent>
+              <div className="p-4 border-t flex gap-3">
+                <Button onClick={() => handleDownloadPdf(viewDoc)}>
+                  <Download className="w-4 h-4 mr-2" /> Download PDF
+                </Button>
+                <Button variant="outline" onClick={() => setViewDoc(null)}>
+                  Close
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Generated Documents */}
@@ -143,39 +321,63 @@ export default function DocumentsPage() {
             <CardDescription>Previously generated compliance documents</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {generatedDocs.map(doc => (
-                <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-blue-600" />
+            {loading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+                <p className="text-gray-600 mt-2">Loading documents...</p>
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="font-medium text-lg mb-2">No documents yet</h3>
+                <p className="text-gray-600 mb-4">Generate your first compliance document to get started</p>
+                <Button onClick={() => setShowGenerator(true)}>
+                  <Plus className="w-4 h-4 mr-2" /> Create Document
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {documents.map(doc => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{doc.title}</div>
+                        <div className="text-sm text-gray-600">
+                          Created {new Date(doc.created_at).toLocaleDateString()} • v{doc.version}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium">{doc.name}</div>
-                      <div className="text-sm text-gray-600">Created {doc.createdAt}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        active
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={() => setViewDoc(doc)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDownloadPdf(doc)}>
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteDocument(doc.id)}
+                        disabled={deleting === doc.id}
+                      >
+                        {deleting === doc.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        )}
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                      doc.status === 'active' ? 'bg-green-100 text-green-700' :
-                      doc.status === 'draft' ? 'bg-gray-100 text-gray-700' :
-                      'bg-orange-100 text-orange-700'
-                    }`}>
-                      {doc.status === 'active' && <CheckCircle className="w-3 h-3" />}
-                      {doc.status === 'draft' && <Clock className="w-3 h-3" />}
-                      {doc.status === 'review' && <AlertTriangle className="w-3 h-3" />}
-                      {doc.status}
-                    </span>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -226,18 +428,18 @@ export default function DocumentsPage() {
                     <div className="text-xs text-gray-600">Print-ready format</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
                   <FileText className="w-5 h-5 text-blue-600" />
                   <div>
                     <div className="font-medium text-sm">Word (DOCX)</div>
-                    <div className="text-xs text-gray-600">Editable format</div>
+                    <div className="text-xs text-gray-600">Coming soon</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
                   <FileText className="w-5 h-5 text-green-600" />
                   <div>
                     <div className="font-medium text-sm">HTML</div>
-                    <div className="text-xs text-gray-600">For website embedding</div>
+                    <div className="text-xs text-gray-600">Coming soon</div>
                   </div>
                 </div>
               </div>
