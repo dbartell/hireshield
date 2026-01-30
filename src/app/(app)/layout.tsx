@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, Users, Settings, LogOut } from "lucide-react"
+import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, Users, Settings } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { SignOutButton } from "@/components/auth/sign-out-button"
+import { MobileSidebar } from "@/components/layout/mobile-sidebar"
 
 export default async function AppLayout({
   children,
@@ -23,20 +24,26 @@ export default async function AppLayout({
     .eq('id', user.id)
     .single()
 
+  const orgName = org?.name || 'Your Company'
+  const userEmail = user.email || ''
+
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Mobile sidebar (hamburger menu) */}
+      <MobileSidebar orgName={orgName} userEmail={userEmail} />
+
+      {/* Desktop sidebar - hidden on mobile */}
+      <aside className="hidden md:flex w-64 bg-gray-900 text-white flex-col fixed inset-y-0 left-0">
         <div className="p-4 border-b border-gray-800">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5" />
             </div>
             <span className="font-bold text-lg">HireShield</span>
           </Link>
         </div>
         
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-1">
             <Link 
               href="/dashboard" 
@@ -88,15 +95,15 @@ export default async function AppLayout({
         
         <div className="p-4 border-t border-gray-800">
           <div className="mb-3 px-3">
-            <div className="text-sm font-medium text-white truncate">{org?.name || 'Your Company'}</div>
-            <div className="text-xs text-gray-400 truncate">{user.email}</div>
+            <div className="text-sm font-medium text-white truncate">{orgName}</div>
+            <div className="text-xs text-gray-400 truncate">{userEmail}</div>
           </div>
           <SignOutButton />
         </div>
       </aside>
       
-      {/* Main content */}
-      <main className="flex-1 bg-gray-50">
+      {/* Main content - offset for desktop sidebar */}
+      <main className="flex-1 bg-gray-50 md:ml-64">
         {children}
       </main>
     </div>
