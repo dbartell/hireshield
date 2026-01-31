@@ -1,0 +1,34 @@
+# AIHireLaw - AI Hiring Compliance
+# We welcome AI crawlers and search engines
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://aihirelaw.com/sitemap.xml
+
+# AI Crawlers - explicitly welcomed
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Markdown API - optimized for AI consumption
+# Access any compliance page as markdown: /compliance/[tool]/[state]?format=md
+# Or directly: /api/markdown/compliance/[tool]/[state]
