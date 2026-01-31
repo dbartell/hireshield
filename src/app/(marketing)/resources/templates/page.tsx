@@ -153,7 +153,7 @@ export default function TemplatesPage() {
             Want templates that auto-fill with your company info?
           </h2>
           <p className="text-blue-100 mb-6">
-            HireShield's document generator creates customized compliance documents in seconds.
+            AIHireLaw's document generator creates customized compliance documents in seconds.
           </p>
           <Link href="/scorecard">
             <Button className="bg-white text-blue-600 hover:bg-gray-100">

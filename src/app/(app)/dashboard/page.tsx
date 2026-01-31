@@ -7,6 +7,10 @@ import {
   TrendingUp, Calendar
 } from "lucide-react"
 import { getDashboardData } from "@/lib/actions/dashboard"
+import { OnboardingWizard } from "@/components/onboarding-wizard"
+import { UrgencyAlerts, generateAlerts } from "@/components/urgency-alerts"
+import { CalendlyCTA, ContextualHelp } from "@/components/calendly-cta"
+import { ComplianceScoreHelp, StateLawsHelp } from "@/components/help-content"
 
 export default async function DashboardPage() {
   const data = await getDashboardData()
@@ -14,6 +18,17 @@ export default async function DashboardPage() {
   if (!data) {
     return <div className="p-8">Loading...</div>
   }
+
+  // Generate urgency alerts based on user state
+  const alerts = generateAlerts({
+    hiringStates: data.hiringStates,
+    documentsCount: data.documentsCount,
+    consentCount: data.consentCount,
+    lastAuditDate: data.lastAuditDate,
+    trainingExpired: data.trainingExpired,
+  })
+
+  const isNewUser = data.auditsCount === 0 && data.documentsCount === 0
 
   const getRiskLevel = (score: number) => {
     if (score >= 80) return { level: "Good", color: "text-green-600", bg: "bg-green-100" }
@@ -35,14 +50,30 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's your compliance overview.</p>
+        <p className="text-gray-600">Welcome back{data.userName ? `, ${data.userName}` : ''}! Here's your compliance overview.</p>
       </div>
+
+      {/* Onboarding Wizard (for new users) */}
+      {isNewUser && (
+        <OnboardingWizard
+          userName={data.userName}
+          hasCompletedAudit={data.auditsCount > 0}
+          hasGeneratedDoc={data.documentsCount > 0}
+          leadData={data.leadData}
+        />
+      )}
+
+      {/* Urgency Alerts */}
+      <UrgencyAlerts alerts={alerts} />
 
       {/* Compliance Score Card */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Compliance Score</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Compliance Score
+              <ComplianceScoreHelp />
+            </CardTitle>
             <CardDescription>Overall compliance status across all regulated states</CardDescription>
           </CardHeader>
           <CardContent>
@@ -272,22 +303,42 @@ export default async function DashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0" />
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-orange-800">Action Required</h3>
                 <p className="text-orange-700 text-sm mt-1">
                   Your compliance score indicates gaps that could expose you to penalties. 
                   Complete the remaining documents and training to improve your score.
                 </p>
-                <Link href="/audit">
-                  <Button size="sm" className="mt-3" variant="outline">
-                    View Recommendations
-                  </Button>
-                </Link>
+                <div className="flex gap-3 mt-3">
+                  <Link href="/audit">
+                    <Button size="sm" variant="outline">
+                      View Recommendations
+                    </Button>
+                  </Link>
+                  <CalendlyCTA 
+                    variant="inline" 
+                    title="Need help prioritizing?" 
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Calendly Help CTA - shown for users who might be stuck */}
+      {data.complianceScore < 60 && (
+        <div className="mt-6">
+          <CalendlyCTA
+            variant="banner"
+            title="Not sure where to start?"
+            description="Book a free 15-minute compliance review. We'll create a prioritized action plan for you."
+          />
+        </div>
+      )}
+
+      {/* Floating Calendly Button */}
+      <CalendlyCTA variant="floating" />
     </div>
   )
 }

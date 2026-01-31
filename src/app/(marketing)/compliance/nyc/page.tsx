@@ -113,7 +113,7 @@ export default function NYCCompliancePage() {
           </div>
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-blue-800">
-              <strong>Tip:</strong> The notice can be provided via the job posting, email, or a dedicated web page. HireShield can generate compliant notice language for your specific AEDT.
+              <strong>Tip:</strong> The notice can be provided via the job posting, email, or a dedicated web page. AIHireLaw can generate compliant notice language for your specific AEDT.
             </p>
           </div>
         </div>
@@ -146,10 +146,10 @@ export default function NYCCompliancePage() {
         </div>
       </section>
 
-      {/* How HireShield Helps */}
+      {/* How AIHireLaw Helps */}
       <section className="py-16 bg-blue-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold mb-8">How HireShield Helps</h2>
+          <h2 className="text-3xl font-bold mb-8">How AIHireLaw Helps</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-blue-700 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-2">Bias Audit Tracking</h3>
@@ -205,7 +205,7 @@ export default function NYCCompliancePage() {
             </div>
             <div className="border-b pb-6">
               <h3 className="font-semibold text-lg mb-2">Where do I publish the bias audit results?</h3>
-              <p className="text-gray-600">On your careers page or any publicly accessible website page. HireShield can generate a compliant disclosure page template for you.</p>
+              <p className="text-gray-600">On your careers page or any publicly accessible website page. AIHireLaw can generate a compliant disclosure page template for you.</p>
             </div>
           </div>
         </div>

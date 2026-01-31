@@ -41,7 +41,7 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5" />
           </div>
-          <span className="font-bold text-lg">HireShield</span>
+          <span className="font-bold text-lg">AIHireLaw</span>
         </Link>
         <button
           onClick={() => setIsOpen(true)}
@@ -76,7 +76,7 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5" />
             </div>
-            <span className="font-bold text-lg">HireShield</span>
+            <span className="font-bold text-lg">AIHireLaw</span>
           </Link>
           <button
             onClick={() => setIsOpen(false)}

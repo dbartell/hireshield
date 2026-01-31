@@ -112,7 +112,7 @@ export default function SignupPage() {
             <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <span className="font-bold text-xl">HireShield</span>
+            <span className="font-bold text-xl">AIHireLaw</span>
           </Link>
           <CardTitle>Create your account</CardTitle>
           <CardDescription>Start your 14-day free trial</CardDescription>

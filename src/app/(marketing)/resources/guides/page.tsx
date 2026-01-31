@@ -121,7 +121,7 @@ export default function GuidesPage() {
             Need help implementing compliance?
           </h2>
           <p className="text-gray-600 mb-6">
-            HireShield automates document generation, training, and tracking so you can focus on hiring.
+            AIHireLaw automates document generation, training, and tracking so you can focus on hiring.
           </p>
           <Link href="/scorecard">
             <Button variant="cta" size="lg">

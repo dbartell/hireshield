@@ -8,6 +8,8 @@ import { allStates, regulatedStates, stateRequirements } from "@/data/states"
 import { aiHiringTools, usageTypes } from "@/data/tools"
 import { saveAudit, getAuditHistory } from "@/lib/actions/audit"
 import Link from "next/link"
+import { CalendlyCTA, ContextualHelp } from "@/components/calendly-cta"
+import { AuditResultsHelp, RiskScoreHelp, StateLawsHelp } from "@/components/help-content"
 
 type AuditStep = 'states' | 'tools' | 'usage' | 'results'
 
@@ -43,6 +45,7 @@ export default function AuditPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [auditHistory, setAuditHistory] = useState<AuditRecord[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [wasPrefilled, setWasPrefilled] = useState(false)
 
   const loadHistory = async () => {
     setLoadingHistory(true)
@@ -56,6 +59,28 @@ export default function AuditPage() {
       loadHistory()
     }
   }, [showHistory])
+
+  // Check for prefilled data from scorecard/onboarding
+  useEffect(() => {
+    const prefillData = sessionStorage.getItem('aihirelaw_audit_prefill')
+    if (prefillData) {
+      try {
+        const parsed = JSON.parse(prefillData)
+        if (parsed.states?.length || parsed.tools?.length) {
+          setData(prev => ({
+            states: parsed.states || prev.states,
+            tools: parsed.tools || prev.tools,
+            usages: prev.usages
+          }))
+          setWasPrefilled(true)
+        }
+        // Clear after loading
+        sessionStorage.removeItem('aihirelaw_audit_prefill')
+      } catch (e) {
+        console.error('Failed to parse prefill data:', e)
+      }
+    }
+  }, [])
 
   const goToStep = (newStep: AuditStep) => {
     setStep(newStep)
@@ -251,6 +276,17 @@ export default function AuditPage() {
           </Button>
         </div>
 
+        {/* Prefill Banner */}
+        {wasPrefilled && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-blue-800">Your scorecard answers have been pre-loaded</p>
+              <p className="text-sm text-blue-600">Review and adjust as needed, then continue to see your results.</p>
+            </div>
+          </div>
+        )}
+
         {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -285,7 +321,10 @@ export default function AuditPage() {
         {step === 'states' && (
           <Card>
             <CardHeader>
-              <CardTitle>Where do you hire employees?</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Where do you hire employees?
+                <StateLawsHelp />
+              </CardTitle>
               <CardDescription>Select all states where you have employees or conduct hiring</CardDescription>
             </CardHeader>
             <CardContent>
@@ -418,7 +457,10 @@ export default function AuditPage() {
                     <div className="text-sm text-gray-600">Action Items</div>
                   </div>
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className={`text-3xl font-bold ${riskScore > 50 ? 'text-red-600' : 'text-yellow-600'}`}>{riskScore}</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <div className={`text-3xl font-bold ${riskScore > 50 ? 'text-red-600' : 'text-yellow-600'}`}>{riskScore}</div>
+                      <RiskScoreHelp />
+                    </div>
                     <div className="text-sm text-gray-600">Risk Score</div>
                   </div>
                 </div>
@@ -428,7 +470,10 @@ export default function AuditPage() {
             {/* Findings */}
             <Card>
               <CardHeader>
-                <CardTitle>Compliance Findings</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  Compliance Findings
+                  <AuditResultsHelp />
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -459,6 +504,11 @@ export default function AuditPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Help CTA for confused users */}
+            {findings.length > 2 && (
+              <ContextualHelp context="audit-results" />
+            )}
 
             {/* Actions */}
             <Card>

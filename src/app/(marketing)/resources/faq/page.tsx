@@ -61,7 +61,7 @@ const faqCategories = [
       },
       {
         q: "How do I notify candidates about AI use?",
-        a: "Notification requirements vary by state but generally include: telling candidates AI will be used, what data is collected, how the AI works, and any available alternatives. HireShield generates compliant disclosure notices automatically."
+        a: "Notification requirements vary by state but generally include: telling candidates AI will be used, what data is collected, how the AI works, and any available alternatives. AIHireLaw generates compliant disclosure notices automatically."
       },
       {
         q: "Do candidates have the right to opt out?",
@@ -70,19 +70,19 @@ const faqCategories = [
     ]
   },
   {
-    name: "HireShield",
+    name: "AIHireLaw",
     questions: [
       {
-        q: "What does HireShield do?",
-        a: "HireShield is a compliance platform that helps companies audit their AI hiring tools, generate required disclosures and policies, train HR teams, and track candidate consent—all in one place."
+        q: "What does AIHireLaw do?",
+        a: "AIHireLaw is a compliance platform that helps companies audit their AI hiring tools, generate required disclosures and policies, train HR teams, and track candidate consent—all in one place."
       },
       {
-        q: "Do I need to integrate HireShield with my ATS?",
-        a: "No. HireShield works alongside your existing tools without requiring integrations. You can manually track compliance, generate documents, and manage training without connecting any systems."
+        q: "Do I need to integrate AIHireLaw with my ATS?",
+        a: "No. AIHireLaw works alongside your existing tools without requiring integrations. You can manually track compliance, generate documents, and manage training without connecting any systems."
       },
       {
-        q: "How much does HireShield cost?",
-        a: "HireShield offers three plans: Starter ($199/mo) for small teams, Pro ($499/mo) for growing companies, and Enterprise ($1,999/mo) for large organizations. All plans include a 14-day free trial."
+        q: "How much does AIHireLaw cost?",
+        a: "AIHireLaw offers three plans: Starter ($199/mo) for small teams, Pro ($499/mo) for growing companies, and Enterprise ($1,999/mo) for large organizations. All plans include a 14-day free trial."
       },
       {
         q: "Is there a free trial?",

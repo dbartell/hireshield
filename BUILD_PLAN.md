@@ -1,4 +1,4 @@
-# HireShield Build Plan
+# AIHireLaw Build Plan
 
 ## Phase 1: MVP (Audit + Documents)
 

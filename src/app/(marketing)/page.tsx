@@ -98,7 +98,7 @@ export default function HomePage() {
               One Platform for Complete Compliance
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              HireShield gives you everything you need to comply with AI hiring laws—no IT department required.
+              AIHireLaw gives you everything you need to comply with AI hiring laws—no IT department required.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

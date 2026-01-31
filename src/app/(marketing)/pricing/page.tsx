@@ -1,262 +1,278 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, X } from "lucide-react"
+'use client'
+
+import { useState } from 'react'
+import { Check } from 'lucide-react'
+import Link from 'next/link'
 
 const plans = [
   {
-    name: "Starter",
-    description: "For small teams getting started with compliance",
-    price: 199,
-    popular: false,
+    name: 'Pilot',
+    price: '$99',
+    period: '/month',
+    description: 'For early adopters. Limited to first 10 customers.',
+    badge: '🔥 Early Bird',
+    priceId: 'pilot',
     features: [
-      { name: "Compliance audit tool", included: true },
-      { name: "Document generator", included: true },
-      { name: "Compliance dashboard", included: true },
-      { name: "Email support", included: true },
-      { name: "Training module", included: false },
-      { name: "Consent tracking", included: false },
-      { name: "ATS integrations", included: false },
-      { name: "Custom policies", included: false },
-      { name: "Dedicated support", included: false },
+      'Full compliance dashboard',
+      'All state law tracking (IL, CO, NYC, MD)',
+      'Consent management tools',
+      'Audit trail & documentation',
+      'Training completion tracking',
+      'Email alerts for law changes',
+      'Export compliance reports (PDF)',
+      'Priority support',
     ],
-    cta: "Start Free Trial",
-    href: "/signup?plan=starter"
+    cta: 'Get Started',
+    highlighted: true,
   },
   {
-    name: "Pro",
-    description: "For growing companies that need full compliance",
-    price: 499,
-    popular: true,
+    name: 'Standard',
+    price: '$199',
+    period: '/month',
+    description: 'Full platform access for growing teams.',
+    priceId: 'monthly',
     features: [
-      { name: "Everything in Starter", included: true },
-      { name: "Training module", included: true },
-      { name: "Consent tracking", included: true },
-      { name: "Priority support", included: true },
-      { name: "Unlimited users", included: true },
-      { name: "ATS integrations", included: false },
-      { name: "Custom policies", included: false },
-      { name: "Dedicated support", included: false },
-      { name: "SLA guarantee", included: false },
+      'Everything in Pilot',
+      'Unlimited team members',
+      'API access',
+      'Custom integrations',
+      'Dedicated account manager',
+      'Quarterly compliance reviews',
     ],
-    cta: "Start Free Trial",
-    href: "/signup?plan=pro"
+    cta: 'Contact Sales',
+    highlighted: false,
   },
   {
-    name: "Enterprise",
-    description: "For large organizations with complex needs",
-    price: 1999,
-    popular: false,
+    name: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    description: 'For large organizations with complex needs.',
+    priceId: 'enterprise',
     features: [
-      { name: "Everything in Pro", included: true },
-      { name: "ATS integrations", included: true },
-      { name: "Custom policies", included: true },
-      { name: "Dedicated support", included: true },
-      { name: "SLA guarantee", included: true },
-      { name: "Custom training content", included: true },
-      { name: "API access", included: true },
-      { name: "SSO/SAML", included: true },
-      { name: "Audit log exports", included: true },
+      'Everything in Standard',
+      'Multi-location support',
+      'SSO / SAML integration',
+      'Custom SLA',
+      'On-site training',
+      'Legal review support',
     ],
-    cta: "Contact Sales",
-    href: "/contact?plan=enterprise"
-  }
-]
-
-const faqs = [
-  {
-    q: "What counts as AI in hiring?",
-    a: "Any software that uses algorithms to screen, rank, score, or make recommendations about candidates. This includes LinkedIn Recruiter, Indeed, HireVue, most ATS systems, and many others."
+    cta: 'Contact Sales',
+    highlighted: false,
   },
-  {
-    q: "Do I really need this?",
-    a: "If you hire in Illinois, Colorado, California, or NYC and use any AI-powered hiring tools, yes. Penalties range from $500 to $7,500 per violation, and each candidate can count as a separate violation."
-  },
-  {
-    q: "How long does setup take?",
-    a: "Most companies complete their initial audit in under 30 minutes. Generating compliant documents takes seconds. Full implementation typically takes 1-2 weeks."
-  },
-  {
-    q: "Can I cancel anytime?",
-    a: "Yes, all plans are month-to-month with no long-term commitment. Annual plans receive a 17% discount (2 months free)."
-  },
-  {
-    q: "Do you offer a free trial?",
-    a: "Yes! All plans include a 14-day free trial with full access. No credit card required to start."
-  },
-  {
-    q: "What if I need help?",
-    a: "Starter plans include email support. Pro plans get priority support with faster response times. Enterprise plans include a dedicated customer success manager."
-  }
 ]
 
 export default function PricingPage() {
+  const [loading, setLoading] = useState<string | null>(null)
+
+  const handleCheckout = async (priceId: string) => {
+    if (priceId === 'enterprise' || priceId === 'monthly') {
+      window.location.href = 'mailto:hello@aihirelaw.com?subject=AIHireLaw Enterprise Inquiry'
+      return
+    }
+
+    setLoading(priceId)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      })
+
+      const { url, error } = await res.json()
+      if (error) {
+        // Not logged in - redirect to signup
+        window.location.href = '/signup?redirect=/pricing'
+        return
+      }
+      if (url) {
+        window.location.href = url
+      }
+    } catch (err) {
+      console.error('Checkout error:', err)
+    } finally {
+      setLoading(null)
+    }
+  }
+
   return (
-    <div>
-      {/* Hero */}
-      <section className="py-20 bg-gradient-to-b from-blue-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+      {/* Header */}
+      <header className="border-b border-slate-700">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="text-2xl font-bold text-white">
+            🛡️ AIHireLaw
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-slate-300 hover:text-white">
+              Log in
+            </Link>
+            <Link
+              href="/signup"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-16">
+        {/* Hero */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Choose the plan that fits your company. All plans include a 14-day free trial.
+          <p className="text-xl text-slate-300 max-w-2xl mx-auto">
+            Get compliant before the Feb 1 Colorado deadline. No hidden fees.
+            Cancel anytime.
           </p>
-          <div className="mt-6 inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm">
-            <CheckCircle className="w-4 h-4" />
-            Save 17% with annual billing
-          </div>
         </div>
-      </section>
 
-      {/* Pricing Cards */}
-      <section className="py-12 -mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.name} 
-                className={`relative ${plan.popular ? 'border-blue-600 border-2 shadow-xl' : ''}`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                    Most Popular
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-5xl font-bold">${plan.price}</span>
-                    <span className="text-gray-600">/month</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    ${Math.round(plan.price * 10 / 12)}/mo billed annually
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className={`flex items-center gap-2 text-sm ${!feature.included ? 'text-gray-600' : ''}`}>
-                        {feature.included ? (
-                          <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                        ) : (
-                          <X className="w-4 h-4 text-gray-300 flex-shrink-0" />
-                        )}
-                        {feature.name}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href={plan.href}>
-                    <Button 
-                      className="w-full" 
-                      variant={plan.popular ? 'cta' : 'outline'}
-                      size="lg"
-                    >
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {/* Urgency Banner */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-12 text-center">
+          <p className="text-amber-300">
+            ⏰ <strong>Colorado AI Act</strong> goes into effect{' '}
+            <strong>February 1, 2026</strong>. Only{' '}
+            <strong>
+              {Math.ceil(
+                (new Date('2026-02-01').getTime() - Date.now()) /
+                  (1000 * 60 * 60 * 24)
+              )}{' '}
+              days
+            </strong>{' '}
+            to get compliant.
+          </p>
         </div>
-      </section>
 
-      {/* Comparison Table */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Compare Plans</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-4 px-4">Feature</th>
-                  <th className="text-center py-4 px-4">Starter</th>
-                  <th className="text-center py-4 px-4 bg-blue-50">Pro</th>
-                  <th className="text-center py-4 px-4">Enterprise</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">Compliance Audit</td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="text-center py-4 px-4 bg-blue-50"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">Document Generator</td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="text-center py-4 px-4 bg-blue-50"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">Training Module</td>
-                  <td className="text-center py-4 px-4"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
-                  <td className="text-center py-4 px-4 bg-blue-50"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">Consent Tracking</td>
-                  <td className="text-center py-4 px-4"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
-                  <td className="text-center py-4 px-4 bg-blue-50"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">ATS Integrations</td>
-                  <td className="text-center py-4 px-4"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
-                  <td className="text-center py-4 px-4 bg-blue-50"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
-                  <td className="text-center py-4 px-4"><CheckCircle className="w-5 h-5 text-green-600 mx-auto" /></td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">Users</td>
-                  <td className="text-center py-4 px-4">Up to 5</td>
-                  <td className="text-center py-4 px-4 bg-blue-50">Unlimited</td>
-                  <td className="text-center py-4 px-4">Unlimited</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-4 px-4 font-medium">Support</td>
-                  <td className="text-center py-4 px-4">Email</td>
-                  <td className="text-center py-4 px-4 bg-blue-50">Priority</td>
-                  <td className="text-center py-4 px-4">Dedicated CSM</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-20">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-          <div className="space-y-6">
-            {faqs.map((faq, i) => (
-              <div key={i} className="border-b pb-6">
-                <h3 className="font-semibold text-lg mb-2">{faq.q}</h3>
-                <p className="text-gray-600">{faq.a}</p>
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {plans.map((plan) => (
+            <div
+              key={plan.name}
+              className={`rounded-2xl p-8 ${
+                plan.highlighted
+                  ? 'bg-blue-600 ring-2 ring-blue-400 scale-105'
+                  : 'bg-slate-800 border border-slate-700'
+              }`}
+            >
+              {plan.badge && (
+                <span className="inline-block bg-amber-500 text-black text-sm font-semibold px-3 py-1 rounded-full mb-4">
+                  {plan.badge}
+                </span>
+              )}
+              <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+              <p className="text-slate-300 mb-4">{plan.description}</p>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-white">{plan.price}</span>
+                <span className="text-slate-300">{plan.period}</span>
               </div>
-            ))}
+
+              <button
+                onClick={() => handleCheckout(plan.priceId)}
+                disabled={loading === plan.priceId}
+                className={`w-full py-3 px-4 rounded-lg font-semibold mb-8 transition ${
+                  plan.highlighted
+                    ? 'bg-white text-blue-600 hover:bg-slate-100'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                } disabled:opacity-50`}
+              >
+                {loading === plan.priceId ? 'Loading...' : plan.cta}
+              </button>
+
+              <ul className="space-y-3">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check
+                      className={`w-5 h-5 mt-0.5 ${
+                        plan.highlighted ? 'text-white' : 'text-green-400'
+                      }`}
+                    />
+                    <span
+                      className={plan.highlighted ? 'text-white' : 'text-slate-300'}
+                    >
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* FAQ */}
+        <div className="mt-20">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">
+            Frequently Asked Questions
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                What's included in the pilot pricing?
+              </h3>
+              <p className="text-slate-300">
+                Everything. Full platform access, all features, priority support.
+                We're offering $99/mo (normally $199) to our first 10 customers
+                who help us refine the product.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Can I cancel anytime?
+              </h3>
+              <p className="text-slate-300">
+                Yes. No contracts, no cancellation fees. Cancel from your dashboard
+                anytime and you won't be charged again.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Do I need this if I already use HireVue/Workday?
+              </h3>
+              <p className="text-slate-300">
+                Yes. Those tools audit themselves, but you're responsible for your
+                process: collecting consent, posting notices, keeping records.
+                That's what AIHireLaw handles.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                What if I'm not sure I need this?
+              </h3>
+              <p className="text-slate-300">
+                Take our free{' '}
+                <Link href="/scorecard" className="text-blue-400 hover:underline">
+                  compliance scorecard
+                </Link>
+                . It takes 2 minutes and tells you exactly where you stand.
+              </p>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* CTA */}
-      <section className="py-20 bg-blue-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* CTA */}
+        <div className="mt-20 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Ready to get compliant?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Start your 14-day free trial today. No credit card required.
+          <p className="text-slate-300 mb-8">
+            Start with our free scorecard or jump straight in.
           </p>
-          <Link href="/signup">
-            <Button size="xl" className="bg-white text-blue-600 hover:bg-gray-100">
-              Start Free Trial
-            </Button>
-          </Link>
+          <div className="flex justify-center gap-4">
+            <Link
+              href="/scorecard"
+              className="bg-slate-700 text-white px-6 py-3 rounded-lg hover:bg-slate-600"
+            >
+              Free Scorecard
+            </Link>
+            <button
+              onClick={() => handleCheckout('pilot')}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            >
+              Start Pilot ($99/mo)
+            </button>
+          </div>
         </div>
-      </section>
+      </main>
     </div>
   )
 }

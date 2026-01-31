@@ -426,7 +426,7 @@ export default function ScorecardPage() {
                   <div>
                     <h3 className="font-semibold text-lg">Ready to get compliant?</h3>
                     <p className="text-blue-100 text-sm">
-                      HireShield can help you fix these issues with automated documents, training, and tracking.
+                      AIHireLaw can help you fix these issues with automated documents, training, and tracking.
                     </p>
                   </div>
                 </div>

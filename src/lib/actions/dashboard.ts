@@ -12,6 +12,15 @@ export async function getDashboardData() {
 
   const orgId = user.id
 
+  // Check for lead data from scorecard (for pre-population)
+  const { data: leadData } = await supabase
+    .from('leads')
+    .select('states, tools, risk_score')
+    .eq('email', user.email)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
   // Get organization
   const { data: org } = await supabase
     .from('organizations')
@@ -88,17 +97,32 @@ export async function getDashboardData() {
   complianceScore += (completedCourses / totalCourses) * 40
   complianceScore = Math.round(complianceScore)
 
+  // Check for expired training certs
+  const now = new Date()
+  const hasExpiredTraining = trainingCompletions?.some(tc => 
+    tc.expires_at && new Date(tc.expires_at) < now
+  ) || false
+
+  // Use lead data states if no hiring states configured
+  const effectiveStates = hiringStates?.length 
+    ? hiringStates.map(s => s.state_code)
+    : (leadData?.states || [])
+
   return {
     organization: org,
     complianceScore,
     latestAudit,
+    lastAuditDate: latestAudit?.completed_at || null,
     auditsCount: auditsCount || 0,
     documentsCount: documentsCount || 0,
     consentCount: consentCount || 0,
     trainingCompleted: completedCourses,
     trainingTotal: totalCourses,
-    hiringStates: hiringStates?.map(s => s.state_code) || [],
+    trainingExpired: hasExpiredTraining,
+    hiringStates: effectiveStates,
     toolsCount: toolsCount || 0,
     recentDocs,
+    leadData: leadData || null,
+    userName: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
   }
 }

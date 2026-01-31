@@ -93,7 +93,7 @@ export default function MarketingLayout({
               <div className="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">H</span>
               </div>
-              <span className="font-bold text-xl text-gray-900">HireShield</span>
+              <span className="font-bold text-xl text-gray-900">AIHireLaw</span>
             </Link>
             
             <div className="hidden md:flex items-center gap-8">
@@ -164,7 +164,7 @@ export default function MarketingLayout({
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p>© 2026 HireShield. All rights reserved.</p>
+            <p>© 2026 AIHireLaw. All rights reserved.</p>
           </div>
         </div>
       </footer>

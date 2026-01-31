@@ -148,10 +148,10 @@ export default function IllinoisCompliancePage() {
         </div>
       </section>
 
-      {/* How HireShield Helps */}
+      {/* How AIHireLaw Helps */}
       <section className="py-16 bg-blue-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold mb-8">How HireShield Helps</h2>
+          <h2 className="text-3xl font-bold mb-8">How AIHireLaw Helps</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-blue-700 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-2">AI Tool Audit</h3>
@@ -207,7 +207,7 @@ export default function IllinoisCompliancePage() {
             </div>
             <div className="border-b pb-6">
               <h3 className="font-semibold text-lg mb-2">How detailed does the AI disclosure need to be?</h3>
-              <p className="text-gray-600">You must disclose the name of the AI system, its purpose in employment decisions, and what data it collects. HireShield can generate compliant disclosure language for your specific tools.</p>
+              <p className="text-gray-600">You must disclose the name of the AI system, its purpose in employment decisions, and what data it collects. AIHireLaw can generate compliant disclosure language for your specific tools.</p>
             </div>
           </div>
         </div>
