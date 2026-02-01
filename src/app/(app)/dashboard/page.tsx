@@ -13,6 +13,7 @@ import { generateAlerts } from "@/lib/alerts"
 import { CalendlyCTA, ContextualHelp } from "@/components/calendly-cta"
 import { ComplianceScoreHelp, StateLawsHelp } from "@/components/help-content"
 import { UpcomingRenewals } from "@/components/upcoming-renewals"
+import { DeleteAccountButton } from "@/components/admin/delete-account-button"
 
 export default async function DashboardPage() {
   const data = await getDashboardData()
@@ -50,9 +51,12 @@ export default async function DashboardPage() {
   return (
     <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back{data.userName ? `, ${data.userName}` : ''}! Here's your compliance overview.</p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back{data.userName ? `, ${data.userName}` : ''}! Here&apos;s your compliance overview.</p>
+        </div>
+        <DeleteAccountButton isSuperAdmin={data.isSuperAdmin} />
       </div>
 
       {/* Onboarding Wizard (for new users) */}
