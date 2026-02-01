@@ -14,11 +14,10 @@ import {
   initializeRemediation,
   updateRemediationStatus,
   getComplianceVerification,
-  saveComplianceVerification,
-  stateChecklists,
-  type RemediationItem,
-  type ComplianceVerification
+  saveComplianceVerification
 } from "@/lib/actions/compliance"
+import { stateChecklists } from "@/lib/types/compliance"
+import type { RemediationItem, ComplianceVerification } from "@/lib/types/compliance"
 import { regulatedStates, stateRequirements } from "@/data/states"
 
 export default function RemediationPage() {

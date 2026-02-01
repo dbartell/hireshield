@@ -65,10 +65,12 @@ export function SidebarStates({ onNavigate }: SidebarStatesProps) {
           ) : (
             states.map((state) => {
               const isActive = activeStateCode === state.state_code
-              const progressText = state.total > 0 
-                ? `${state.completed}/${state.total} complete`
+              const total = state.total ?? 0
+              const completed = state.completed ?? 0
+              const progressText = total > 0 
+                ? `${completed}/${total} complete`
                 : 'Not started'
-              const isComplete = state.completed === state.total && state.total > 0
+              const isComplete = completed === total && total > 0
 
               return (
                 <Link

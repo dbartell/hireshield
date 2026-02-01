@@ -11,9 +11,9 @@ import {
   getHiringStates, 
   addHiringState, 
   removeHiringState,
-  stateHasComplianceWork,
-  stateChecklists
+  stateHasComplianceWork
 } from "@/lib/actions/compliance"
+import { stateChecklists } from "@/lib/types/compliance"
 import { allStates, regulatedStates } from "@/data/states"
 
 interface RemovalModalProps {

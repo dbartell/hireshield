@@ -16,12 +16,10 @@ import {
   initializeRemediation,
   updateRemediationStatus,
   getComplianceVerification,
-  saveComplianceVerification,
-  stateChecklists,
-  type RemediationItem,
-  type ComplianceVerification,
-  type HiringStateWithProgress
+  saveComplianceVerification
 } from "@/lib/actions/compliance"
+import { stateChecklists } from "@/lib/types/compliance"
+import type { RemediationItem, ComplianceVerification, HiringStateWithProgress } from "@/lib/types/compliance"
 import { stateRequirements, regulatedStates } from "@/data/states"
 
 interface StatePageProps {
