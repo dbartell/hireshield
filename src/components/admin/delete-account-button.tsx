@@ -1,25 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 
 interface DeleteAccountButtonProps {
   isSuperAdmin: boolean
 }
 
 export function DeleteAccountButton({ isSuperAdmin }: DeleteAccountButtonProps) {
-  const [open, setOpen] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [deleteUser, setDeleteUser] = useState(true)
   const [loading, setLoading] = useState(false)
   const [confirmText, setConfirmText] = useState('')
@@ -43,7 +34,6 @@ export function DeleteAccountButton({ isSuperAdmin }: DeleteAccountButtonProps) 
         return
       }
 
-      // Redirect to home after successful deletion
       window.location.href = '/'
     } catch (error) {
       alert('Failed to delete account')
@@ -54,108 +44,114 @@ export function DeleteAccountButton({ isSuperAdmin }: DeleteAccountButtonProps) 
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button variant="destructive" size="sm" className="gap-2">
-            <Trash2 className="h-4 w-4" />
-            Admin: Delete Account
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              Delete Account & All Data
-            </DialogTitle>
-            <DialogDescription>
+      <Button 
+        variant="destructive" 
+        size="sm" 
+        className="gap-2"
+        onClick={() => setShowModal(true)}
+      >
+        <Trash2 className="h-4 w-4" />
+        Admin: Delete Account
+      </Button>
+
+      {/* First Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-xl font-bold text-red-600 flex items-center gap-2 mb-4">
+              ⚠️ Delete Account & All Data
+            </h2>
+            
+            <p className="text-gray-600 mb-4">
               This will permanently delete all organization data including:
-            </DialogDescription>
-          </DialogHeader>
+            </p>
 
-          <ul className="text-sm text-gray-600 list-disc list-inside space-y-1 my-4">
-            <li>All audits and findings</li>
-            <li>All compliance documents</li>
-            <li>Training assignments and certificates</li>
-            <li>Team members and invites</li>
-            <li>ATS integrations and synced data</li>
-            <li>Disclosure pages</li>
-            <li>All other organization data</li>
-          </ul>
+            <ul className="text-sm text-gray-600 list-disc list-inside space-y-1 mb-4">
+              <li>All audits and findings</li>
+              <li>All compliance documents</li>
+              <li>Training assignments and certificates</li>
+              <li>Team members and invites</li>
+              <li>ATS integrations and synced data</li>
+              <li>Disclosure pages</li>
+            </ul>
 
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-            <input
-              type="checkbox"
-              id="delete-user"
-              checked={deleteUser}
-              onChange={(e) => setDeleteUser(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="delete-user" className="text-sm">
-              Also delete the user account (can&apos;t sign back in)
+            <label className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg mb-4">
+              <input
+                type="checkbox"
+                checked={deleteUser}
+                onChange={(e) => setDeleteUser(e.target.checked)}
+                className="rounded"
+              />
+              <span className="text-sm">Also delete the user account</span>
             </label>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  setShowModal(false)
+                  setShowConfirm(true)
+                }}
+              >
+                Continue
+              </Button>
+            </div>
           </div>
+        </div>
+      )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => {
-                setOpen(false)
-                setConfirmOpen(true)
-              }}
-            >
-              Continue
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Second confirmation dialog */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600">
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-xl font-bold text-red-600 mb-4">
               ⚠️ Final Confirmation
-            </DialogTitle>
-            <DialogDescription>
+            </h2>
+            
+            <p className="text-gray-600 mb-4">
               Type <strong>DELETE EVERYTHING</strong> to confirm:
-            </DialogDescription>
-          </DialogHeader>
+            </p>
 
-          <input
-            type="text"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="DELETE EVERYTHING"
-            className="w-full px-3 py-2 border rounded-md"
-          />
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="DELETE EVERYTHING"
+              className="w-full px-3 py-2 border rounded-md mb-4"
+              autoFocus
+            />
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setConfirmOpen(false)
-              setConfirmText('')
-            }}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDelete}
-              disabled={confirmText !== 'DELETE EVERYTHING' || loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete Everything'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowConfirm(false)
+                  setConfirmText('')
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={confirmText !== 'DELETE EVERYTHING' || loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Everything'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
