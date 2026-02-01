@@ -1,9 +1,10 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, Users, Settings, CheckSquare } from "lucide-react"
+import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, Users, Settings } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { MobileSidebar } from "@/components/layout/mobile-sidebar"
+import { SidebarStates } from "@/components/layout/sidebar-states"
 
 export default async function AppLayout({
   children,
@@ -59,13 +60,15 @@ export default async function AppLayout({
               <ClipboardCheck className="w-5 h-5" />
               Compliance Audit
             </Link>
-            <Link 
-              href="/audit/remediation" 
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors"
-            >
-              <CheckSquare className="w-5 h-5" />
-              Remediation
-            </Link>
+          </div>
+
+          {/* States Accordion */}
+          <div className="mt-4 pt-4 border-t border-gray-800">
+            <SidebarStates />
+          </div>
+          
+          {/* Other Nav Items */}
+          <div className="mt-4 pt-4 border-t border-gray-800 space-y-1">
             <Link 
               href="/documents" 
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors"

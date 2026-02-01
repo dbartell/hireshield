@@ -615,3 +615,222 @@ export async function getComplianceStatus() {
       : 0,
   }
 }
+
+// ============================================
+// HIRING STATES MANAGEMENT
+// ============================================
+
+export interface HiringStateWithProgress {
+  state_code: string
+  state_name: string
+  is_regulated: boolean
+  completed: number
+  total: number
+  is_compliant: boolean
+}
+
+// Add a hiring state and auto-create remediation items if regulated
+export async function addHiringState(stateCode: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  // Check if already exists
+  const { data: existing } = await supabase
+    .from('hiring_states')
+    .select('id')
+    .eq('org_id', user.id)
+    .eq('state_code', stateCode)
+    .single()
+
+  if (existing) {
+    return { error: 'State already added' }
+  }
+
+  // Add the state
+  const { error } = await supabase
+    .from('hiring_states')
+    .insert({
+      org_id: user.id,
+      state_code: stateCode,
+    })
+
+  if (error) return { error: error.message }
+
+  // If it's a regulated state, initialize remediation items
+  const regulatedStates = ['IL', 'CO', 'CA', 'NYC']
+  if (regulatedStates.includes(stateCode)) {
+    await initializeRemediation(stateCode)
+  }
+
+  revalidatePath('/states')
+  revalidatePath('/dashboard')
+  revalidatePath('/audit/remediation')
+  return { success: true }
+}
+
+// Remove a hiring state (soft-remove by deleting from hiring_states, but keeping remediation records)
+export async function removeHiringState(stateCode: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  // Just remove from hiring_states - remediation items remain for historical record
+  const { error } = await supabase
+    .from('hiring_states')
+    .delete()
+    .eq('org_id', user.id)
+    .eq('state_code', stateCode)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/states')
+  revalidatePath('/dashboard')
+  revalidatePath('/audit/remediation')
+  return { success: true }
+}
+
+// Get detailed state progress for a specific state
+export async function getStateProgress(stateCode: string): Promise<HiringStateWithProgress | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const regulatedStates = ['IL', 'CO', 'CA', 'NYC']
+  const isRegulated = regulatedStates.includes(stateCode)
+
+  // Get state name from static data
+  const stateNames: Record<string, string> = {
+    AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+    CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+    HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+    KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+    MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+    MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+    NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+    OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+    SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+    VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+    DC: "Washington D.C.", NYC: "New York City",
+  }
+
+  if (!isRegulated) {
+    return {
+      state_code: stateCode,
+      state_name: stateNames[stateCode] || stateCode,
+      is_regulated: false,
+      completed: 0,
+      total: 0,
+      is_compliant: true, // Non-regulated states are automatically compliant
+    }
+  }
+
+  // Get remediation items for this state
+  const { data: items } = await supabase
+    .from('remediation_items')
+    .select('*')
+    .eq('org_id', user.id)
+    .eq('state_code', stateCode)
+
+  // Get compliance verification
+  const { data: verification } = await supabase
+    .from('compliance_verifications')
+    .select('is_compliant')
+    .eq('org_id', user.id)
+    .eq('state_code', stateCode)
+    .single()
+
+  const completed = items?.filter(i => i.status === 'complete').length || 0
+  const total = items?.length || stateChecklists[stateCode]?.length || 0
+
+  return {
+    state_code: stateCode,
+    state_name: stateNames[stateCode] || stateCode,
+    is_regulated: true,
+    completed,
+    total,
+    is_compliant: verification?.is_compliant || false,
+  }
+}
+
+// Get all hiring states with progress info
+export async function getHiringStatesWithProgress(): Promise<HiringStateWithProgress[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return []
+
+  // Get all hiring states
+  const { data: states } = await supabase
+    .from('hiring_states')
+    .select('state_code')
+    .eq('org_id', user.id)
+    .order('state_code')
+
+  if (!states || states.length === 0) return []
+
+  // Get all remediation items
+  const { data: items } = await supabase
+    .from('remediation_items')
+    .select('*')
+    .eq('org_id', user.id)
+
+  // Get all verifications
+  const { data: verifications } = await supabase
+    .from('compliance_verifications')
+    .select('state_code, is_compliant')
+    .eq('org_id', user.id)
+
+  const regulatedStates = ['IL', 'CO', 'CA', 'NYC']
+  const stateNames: Record<string, string> = {
+    AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+    CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+    HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+    KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+    MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+    MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+    NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+    OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+    SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+    VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+    DC: "Washington D.C.", NYC: "New York City",
+  }
+
+  return states.map(({ state_code }) => {
+    const isRegulated = regulatedStates.includes(state_code)
+    const stateItems = items?.filter(i => i.state_code === state_code) || []
+    const verification = verifications?.find(v => v.state_code === state_code)
+    
+    const completed = stateItems.filter(i => i.status === 'complete').length
+    const total = stateItems.length || (isRegulated ? stateChecklists[state_code]?.length || 0 : 0)
+
+    return {
+      state_code,
+      state_name: stateNames[state_code] || state_code,
+      is_regulated: isRegulated,
+      completed,
+      total,
+      is_compliant: isRegulated ? (verification?.is_compliant || false) : true,
+    }
+  })
+}
+
+// Check if state has existing compliance work (for removal warning)
+export async function stateHasComplianceWork(stateCode: string): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return false
+
+  const { data: items } = await supabase
+    .from('remediation_items')
+    .select('id')
+    .eq('org_id', user.id)
+    .eq('state_code', stateCode)
+    .limit(1)
+
+  return (items?.length || 0) > 0
+}
