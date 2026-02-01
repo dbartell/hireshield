@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getUserMembership } from '@/lib/permissions'
+import { getUserMembership } from '@/lib/permissions-server'
 
 export async function GET(req: NextRequest) {
   try {
@@ -74,22 +74,25 @@ export async function GET(req: NextRequest) {
       .eq('id', membership.organization_id)
       .single()
     
+    // Helper to extract profile data from join result
+    const extractProfile = (profiles: unknown) => {
+      if (!profiles) return undefined
+      const profileData = Array.isArray(profiles) ? profiles[0] : profiles
+      if (!profileData) return undefined
+      const { email, full_name } = profileData as { email: string; full_name?: string }
+      return { email, full_name }
+    }
+
     // Transform the data to match our types
     const transformedMembers = members?.map(m => ({
       ...m,
-      user: m.profiles ? {
-        email: (m.profiles as { email: string; full_name?: string }).email,
-        full_name: (m.profiles as { email: string; full_name?: string }).full_name,
-      } : undefined,
+      user: extractProfile(m.profiles),
       profiles: undefined, // Remove the original profiles field
     })) ?? []
     
     const transformedInvites = invites?.map(i => ({
       ...i,
-      inviter: i.profiles ? {
-        email: (i.profiles as { email: string; full_name?: string }).email,
-        full_name: (i.profiles as { email: string; full_name?: string }).full_name,
-      } : undefined,
+      inviter: extractProfile(i.profiles),
       profiles: undefined,
     })) ?? []
     

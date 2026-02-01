@@ -8,7 +8,8 @@ import { createMergeClient } from '@/lib/merge/client'
  * Generate a Merge Link token for connecting an ATS.
  * This initiates the OAuth flow via Merge Link.
  */
-export async function POST(req: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function POST(_req: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

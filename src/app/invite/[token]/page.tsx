@@ -103,9 +103,9 @@ export default function InviteAcceptPage({
             <XCircle className="w-12 h-12 text-red-500 mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Invite</h2>
             <p className="text-gray-600 text-center mb-6">{error}</p>
-            <Button asChild>
-              <Link href="/login">Go to Login</Link>
-            </Button>
+            <Link href="/login">
+              <Button>Go to Login</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -172,28 +172,28 @@ export default function InviteAcceptPage({
               {/* Special handling for auth errors */}
               {errorCode === 'UNAUTHORIZED' && (
                 <div className="mt-3 flex gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/login?redirect=/invite/${token}`}>
-                      <LogIn className="w-4 h-4 mr-1" />
+                  <Link href={`/login?redirect=/invite/${token}`}>
+                    <Button size="sm" variant="outline" className="gap-1">
+                      <LogIn className="w-4 h-4" />
                       Log In
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/signup?redirect=/invite/${token}&email=${encodeURIComponent(invite?.email || '')}`}>
-                      <UserPlus className="w-4 h-4 mr-1" />
+                    </Button>
+                  </Link>
+                  <Link href={`/signup?redirect=/invite/${token}&email=${encodeURIComponent(invite?.email || '')}`}>
+                    <Button size="sm" variant="outline" className="gap-1">
+                      <UserPlus className="w-4 h-4" />
                       Sign Up
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               )}
               
               {errorCode === 'EMAIL_MISMATCH' && (
                 <div className="mt-3">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/login?redirect=/invite/${token}`}>
+                  <Link href={`/login?redirect=/invite/${token}`}>
+                    <Button size="sm" variant="outline">
                       Log in with {invite?.email}
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>

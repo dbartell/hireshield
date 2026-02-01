@@ -40,14 +40,18 @@ export async function GET(
       return NextResponse.json({ error: 'This invite has expired' }, { status: 400 })
     }
     
+    // Handle the organizations join - it can be object or array depending on supabase version
+    const orgData = invite.organizations as unknown
+    const orgName = Array.isArray(orgData) 
+      ? (orgData[0] as { name: string } | undefined)?.name 
+      : (orgData as { name: string } | null)?.name
+
     return NextResponse.json({
       invite: {
         email: invite.email,
         role: invite.role,
         expires_at: invite.expires_at,
-        organization: invite.organizations ? {
-          name: (invite.organizations as { name: string }).name,
-        } : undefined,
+        organization: orgName ? { name: orgName } : undefined,
       },
     })
   } catch (error) {

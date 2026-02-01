@@ -118,6 +118,91 @@ export interface TrainingCompletion {
   certificate_url: string | null
 }
 
+// Merge.dev ATS Integration types
+
+export interface ATSIntegration {
+  id: string
+  org_id: string
+  merge_account_token: string
+  integration_slug: string
+  integration_name: string
+  status: 'active' | 'paused' | 'disconnected' | 'error'
+  last_sync_at: string | null
+  sync_cursor: string | null
+  sync_error: string | null
+  settings: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface SyncedCandidate {
+  id: string
+  org_id: string
+  integration_id: string
+  merge_id: string
+  remote_id: string | null
+  email: string | null
+  first_name: string | null
+  last_name: string | null
+  phone_numbers: { value: string; type: string | null }[]
+  locations: { raw: string; city?: string; state?: string; country?: string }[]
+  tags: string[]
+  is_regulated: boolean
+  regulated_jurisdictions: string[]
+  consent_status: 'unknown' | 'pending' | 'granted' | 'denied' | 'not_required'
+  consent_granted_at: string | null
+  disclosure_sent_at: string | null
+  raw_data: Record<string, unknown>
+  synced_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SyncedApplication {
+  id: string
+  org_id: string
+  integration_id: string
+  candidate_id: string
+  merge_id: string
+  remote_id: string | null
+  job_merge_id: string | null
+  job_name: string | null
+  job_offices: string[]
+  current_stage: string | null
+  current_stage_id: string | null
+  applied_at: string | null
+  rejected_at: string | null
+  is_ai_screened: boolean
+  ai_screening_stage: string | null
+  compliance_flags: ComplianceFlag[]
+  raw_data: Record<string, unknown>
+  synced_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ComplianceFlag {
+  type: 'missing_consent' | 'missing_disclosure' | 'ai_screen_without_consent' | 'regulated_jurisdiction'
+  severity: 'info' | 'warning' | 'error' | 'critical'
+  message: string
+  detected_at: string
+}
+
+export interface ATSAuditEvent {
+  id: string
+  org_id: string
+  integration_id: string | null
+  candidate_id: string | null
+  application_id: string | null
+  event_type: string
+  event_source: string
+  description: string
+  severity: 'info' | 'warning' | 'error' | 'critical'
+  metadata: Record<string, unknown>
+  occurred_at: string
+  created_at: string
+}
+
 // App types
 
 export interface StateRequirement {

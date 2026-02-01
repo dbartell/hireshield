@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission, canChangeToRole } from '@/lib/permissions'
+import { requirePermission } from '@/lib/permissions-server'
+import { canChangeToRole } from '@/lib/permissions'
 import type { MemberRole } from '@/types'
 
 // DELETE - Remove a team member

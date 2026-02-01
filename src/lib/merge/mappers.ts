@@ -7,8 +7,6 @@
 import type {
   MergeCandidate,
   MergeApplication,
-  MergeJob,
-  MergeActivity,
 } from './client'
 import { detectJurisdictions, checkConsentFromTags } from './compliance-engine'
 
