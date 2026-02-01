@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function generateCertificate(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   assignment: { id: string; user_name: string; track: string; org_id: string },
   trackTitle: string
 ) {

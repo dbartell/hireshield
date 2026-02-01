@@ -38,7 +38,8 @@ export async function GET(
       return NextResponse.json({ error: 'Link has expired' }, { status: 404 })
     }
 
-    const org = assignment.organizations as { name: string } | null
+    const orgs = assignment.organizations as { name: string }[] | null
+    const org = orgs?.[0] || null
 
     return NextResponse.json({
       assignment: {
