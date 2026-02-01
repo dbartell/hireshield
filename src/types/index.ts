@@ -118,6 +118,60 @@ export interface TrainingCompletion {
   certificate_url: string | null
 }
 
+// Training Platform types
+export type TrainingTrack = 'recruiter' | 'manager' | 'admin' | 'executive'
+export type TrainingStatus = 'pending' | 'in_progress' | 'completed'
+
+export interface TrainingAssignment {
+  id: string
+  org_id: string
+  user_email: string
+  user_name: string
+  track: TrainingTrack
+  assigned_at: string
+  assigned_by?: string
+  status: TrainingStatus
+  completed_at?: string
+  certificate_id?: string
+  magic_token: string
+  token_expires_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TrainingProgress {
+  id: string
+  assignment_id: string
+  section_number: number
+  started_at: string
+  completed_at?: string
+  video_watched_seconds: number
+  video_total_seconds: number
+  created_at: string
+  updated_at: string
+}
+
+export interface TrainingQuizAttempt {
+  id: string
+  assignment_id: string
+  section_number: number
+  answers: Record<string, number>
+  score: number
+  passed: boolean
+  attempted_at: string
+  created_at: string
+}
+
+export interface TrainingCertificate {
+  id: string
+  assignment_id: string
+  certificate_number: string
+  issued_at: string
+  expires_at: string
+  pdf_url?: string
+  created_at: string
+}
+
 // Merge.dev ATS Integration types
 
 export interface ATSIntegration {

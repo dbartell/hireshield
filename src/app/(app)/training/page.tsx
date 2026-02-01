@@ -1,10 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PlayCircle, CheckCircle, Clock, Award, Lock, ArrowLeft, ArrowRight, Loader2, X } from "lucide-react"
+import { 
+  PlayCircle, CheckCircle, Clock, Award, Lock, 
+  ArrowRight, Loader2, GraduationCap, Users,
+  Download, ExternalLink
+} from "lucide-react"
 import { getTrainingData, markCourseComplete, getCourseContent, Course } from "@/lib/actions/training"
+import { getTrackData, TRACK_LABELS, type TrainingTrack } from "@/lib/training-data"
 
 interface Completion {
   id: string
@@ -13,64 +20,48 @@ interface Completion {
   score: number
 }
 
+interface Assignment {
+  id: string
+  track: TrainingTrack
+  status: 'pending' | 'in_progress' | 'completed'
+  user_name: string
+  completed_at: string | null
+  certificate_id: string | null
+  progress: {
+    section_number: number
+    completed_at: string | null
+  }[]
+  certificate?: {
+    certificate_number: string
+    issued_at: string
+    expires_at: string
+    pdf_url: string | null
+  }
+}
+
 export default function TrainingPage() {
-  const [courses, setCourses] = useState<Course[]>([])
-  const [completions, setCompletions] = useState<Completion[]>([])
+  const router = useRouter()
+  const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeCourse, setActiveCourse] = useState<Course | null>(null)
-  const [activeModuleIndex, setActiveModuleIndex] = useState(0)
-  const [completing, setCompleting] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    loadData()
+    loadAssignments()
   }, [])
 
-  const loadData = async () => {
+  const loadAssignments = async () => {
     setLoading(true)
-    const data = await getTrainingData()
-    setCourses(data.courses)
-    setCompletions(data.completions)
-    setLoading(false)
-  }
-
-  const getCourseStatus = (courseId: string) => {
-    const completion = completions.find(c => c.course_id === courseId)
-    if (completion) return 'completed'
-
-    const course = courses.find(c => c.id === courseId)
-    if (course?.prerequisite) {
-      const prereqComplete = completions.some(c => c.course_id === course.prerequisite)
-      if (!prereqComplete) return 'locked'
-    }
-
-    return 'not-started'
-  }
-
-  const startCourse = async (courseId: string) => {
-    const course = await getCourseContent(courseId)
-    if (course) {
-      setActiveCourse(course)
-      setActiveModuleIndex(0)
+    try {
+      const res = await fetch('/api/training/my-assignments')
+      if (!res.ok) throw new Error('Failed to load assignments')
+      const data = await res.json()
+      setAssignments(data.assignments || [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load')
+    } finally {
+      setLoading(false)
     }
   }
-
-  const handleCompleteCourse = async () => {
-    if (!activeCourse) return
-    
-    setCompleting(true)
-    await markCourseComplete(activeCourse.id)
-    await loadData()
-    setCompleting(false)
-    setActiveCourse(null)
-    setActiveModuleIndex(0)
-  }
-
-  const completedCount = completions.length
-  const totalCourses = courses.length
-  const progressPercent = totalCourses > 0 ? Math.round((completedCount / totalCourses) * 100) : 0
-  const remainingTime = courses
-    .filter(c => !completions.some(comp => comp.course_id === c.id))
-    .reduce((acc, c) => acc + parseInt(c.duration), 0)
 
   if (loading) {
     return (
@@ -80,94 +71,52 @@ export default function TrainingPage() {
     )
   }
 
-  // Course viewer
-  if (activeCourse) {
-    const currentModule = activeCourse.content[activeModuleIndex]
-    const isLastModule = activeModuleIndex === activeCourse.content.length - 1
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={loadAssignments}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
 
+  // No assignments - show info page
+  if (assignments.length === 0) {
     return (
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <Button variant="ghost" onClick={() => setActiveCourse(null)} className="mb-2">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Courses
-              </Button>
-              <h1 className="text-2xl font-bold text-gray-900">{activeCourse.title}</h1>
-              <p className="text-gray-600">Module {activeModuleIndex + 1} of {activeCourse.content.length}</p>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Training</h1>
+            <p className="text-gray-600">AI Hiring Compliance Training for your team</p>
           </div>
 
-          {/* Progress */}
-          <div className="mb-6">
-            <div className="h-2 bg-gray-200 rounded-full">
-              <div 
-                className="h-2 bg-blue-600 rounded-full transition-all" 
-                style={{ width: `${((activeModuleIndex + 1) / activeCourse.content.length) * 100}%` }} 
-              />
-            </div>
-          </div>
-
-          {/* Content */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>{currentModule.title}</CardTitle>
-              <CardDescription>{currentModule.duration} • {currentModule.type}</CardDescription>
-            </CardHeader>
+          <Card className="text-center py-12">
             <CardContent>
-              {currentModule.type === 'quiz' ? (
-                <div className="text-center py-8">
-                  <Award className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">Module Quiz</h3>
-                  <p className="text-gray-600 mb-6">
-                    Test your knowledge from this module.
-                  </p>
-                  {isLastModule ? (
-                    <Button onClick={handleCompleteCourse} disabled={completing}>
-                      {completing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Completing...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Complete Course
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button onClick={() => setActiveModuleIndex(i => i + 1)}>
-                      Pass Quiz & Continue <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed">
-                    {currentModule.content || 'Content coming soon...'}
-                  </p>
-                </div>
-              )}
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <GraduationCap className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">No Training Assigned</h2>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                You don't have any training assigned yet. If you're an admin, you can set up training for your team.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Link href="/settings/training">
+                  <Button variant="outline">
+                    <Users className="w-4 h-4 mr-2" />
+                    Manage Training
+                  </Button>
+                </Link>
+                <Link href="/onboarding/team-setup">
+                  <Button>
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    Set Up Team Training
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
-
-          {/* Navigation */}
-          {currentModule.type !== 'quiz' && (
-            <div className="flex justify-between">
-              <Button 
-                variant="outline" 
-                onClick={() => setActiveModuleIndex(i => i - 1)}
-                disabled={activeModuleIndex === 0}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Previous
-              </Button>
-              <Button onClick={() => setActiveModuleIndex(i => i + 1)}>
-                Next <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          )}
         </div>
       </div>
     )
@@ -178,176 +127,162 @@ export default function TrainingPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Training</h1>
-          <p className="text-gray-600">Complete training modules to ensure your team understands compliance requirements</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Training</h1>
+          <p className="text-gray-600">Complete your assigned compliance training modules</p>
         </div>
 
-        {/* Progress Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{completedCount}/{totalCourses}</div>
-                <div className="text-sm text-gray-600">Courses Completed</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{progressPercent}%</div>
-                <div className="text-sm text-gray-600">Overall Progress</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{completedCount > 0 ? completedCount : 0}</div>
-                <div className="text-sm text-gray-600">Certificates Earned</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">{remainingTime}m</div>
-                <div className="text-sm text-gray-600">Time Remaining</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Assignment Cards */}
+        <div className="grid gap-6">
+          {assignments.map(assignment => {
+            const track = getTrackData(assignment.track)
+            const totalSections = track.sections.length
+            const completedSections = assignment.progress.filter(p => p.completed_at).length
+            const progressPercent = Math.round((completedSections / totalSections) * 100)
+            
+            // Find next incomplete section
+            const nextSection = track.sections.find(
+              s => !assignment.progress.find(p => p.section_number === s.number && p.completed_at)
+            )
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Course List */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Training Courses</CardTitle>
-                <CardDescription>Complete all courses to earn your compliance certification</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {courses.map(course => {
-                    const status = getCourseStatus(course.id)
-                    const completion = completions.find(c => c.course_id === course.id)
-
-                    return (
+            return (
+              <Card key={assignment.id} className={assignment.status === 'completed' ? 'border-green-200 bg-green-50' : ''}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                        assignment.status === 'completed' ? 'bg-green-100' : 'bg-blue-100'
+                      }`}>
+                        {assignment.status === 'completed' ? (
+                          <Award className="w-7 h-7 text-green-600" />
+                        ) : (
+                          <GraduationCap className="w-7 h-7 text-blue-600" />
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle>{track.title}</CardTitle>
+                        <CardDescription>{track.description}</CardDescription>
+                      </div>
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                      assignment.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      assignment.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {assignment.status === 'completed' ? 'Completed' :
+                       assignment.status === 'in_progress' ? 'In Progress' :
+                       'Not Started'}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Progress */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Progress</span>
+                      <span className="text-sm font-medium">{completedSections}/{totalSections} sections</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div 
-                        key={course.id} 
-                        className={`p-4 border rounded-lg ${
-                          status === 'locked' ? 'bg-gray-50 opacity-75' : 'hover:bg-gray-50'
+                        className={`h-full transition-all ${
+                          assignment.status === 'completed' ? 'bg-green-500' : 'bg-blue-600'
                         }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                            status === 'completed' ? 'bg-green-100' :
-                            status === 'locked' ? 'bg-gray-100' :
-                            'bg-blue-100'
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sections list */}
+                  <div className="space-y-3 mb-6">
+                    {track.sections.map(section => {
+                      const progress = assignment.progress.find(p => p.section_number === section.number)
+                      const isComplete = !!progress?.completed_at
+                      const isCurrent = nextSection?.number === section.number
+                      const isLocked = !isComplete && !isCurrent && section.number !== 1
+
+                      return (
+                        <div 
+                          key={section.number}
+                          className={`flex items-center gap-4 p-3 rounded-lg border ${
+                            isComplete ? 'bg-green-50 border-green-200' :
+                            isCurrent ? 'bg-blue-50 border-blue-200' :
+                            isLocked ? 'bg-gray-50 border-gray-200 opacity-60' :
+                            'bg-white border-gray-200'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            isComplete ? 'bg-green-500' :
+                            isCurrent ? 'bg-blue-500' :
+                            'bg-gray-300'
                           }`}>
-                            {status === 'completed' && <CheckCircle className="w-6 h-6 text-green-600" />}
-                            {status === 'not-started' && <PlayCircle className="w-6 h-6 text-blue-600" />}
-                            {status === 'locked' && <Lock className="w-6 h-6 text-gray-600" />}
+                            {isComplete ? (
+                              <CheckCircle className="w-5 h-5 text-white" />
+                            ) : isLocked ? (
+                              <Lock className="w-4 h-4 text-gray-500" />
+                            ) : (
+                              <span className="text-white font-medium text-sm">{section.number}</span>
+                            )}
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-semibold">{course.title}</h3>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                status === 'completed' ? 'bg-green-100 text-green-700' :
-                                status === 'locked' ? 'bg-gray-100 text-gray-600' :
-                                'bg-blue-100 text-blue-700'
-                              }`}>
-                                {status === 'completed' && 'Completed'}
-                                {status === 'not-started' && 'Not started'}
-                                {status === 'locked' && 'Locked'}
-                              </span>
+                            <div className="font-medium text-sm">{section.title}</div>
+                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                              <Clock className="w-3 h-3" />
+                              {Math.round(section.videoDuration / 60)} min
                             </div>
-                            <p className="text-sm text-gray-600 mt-1">{course.description}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {course.duration}
-                              </span>
-                              <span>{course.modules} modules</span>
-                            </div>
-                            {status === 'locked' && course.prerequisite && (
-                              <p className="text-xs text-orange-600 mt-2">
-                                Requires: {courses.find(c => c.id === course.prerequisite)?.title}
-                              </p>
-                            )}
                           </div>
-                          <div>
-                            {status === 'completed' && (
-                              <Button variant="outline" size="sm" onClick={() => startCourse(course.id)}>
-                                Review
+                          {isCurrent && assignment.status !== 'completed' && (
+                            <Link href={`/training/${assignment.track}/${section.number}?a=${assignment.id}`}>
+                              <Button size="sm">
+                                {progress ? 'Continue' : 'Start'}
+                                <ArrowRight className="w-4 h-4 ml-1" />
                               </Button>
-                            )}
-                            {status === 'not-started' && (
-                              <Button size="sm" onClick={() => startCourse(course.id)}>
-                                Start
-                              </Button>
-                            )}
-                            {status === 'locked' && (
-                              <Button variant="ghost" size="sm" disabled>
-                                <Lock className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Certificates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Certificates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {completions.length > 0 ? (
-                  <div className="space-y-4">
-                    {completions.map(completion => {
-                      const course = courses.find(c => c.id === completion.course_id)
-                      return (
-                        <div key={completion.id} className="text-center py-4 border-b last:border-0">
-                          <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <Award className="w-6 h-6 text-yellow-600" />
-                          </div>
-                          <div className="font-medium text-sm">{course?.title}</div>
-                          <div className="text-xs text-gray-600">
-                            {new Date(completion.completed_at).toLocaleDateString()}
-                          </div>
+                            </Link>
+                          )}
+                          {isComplete && !isCurrent && (
+                            <Link href={`/training/${assignment.track}/${section.number}?a=${assignment.id}`}>
+                              <Button variant="ghost" size="sm">Review</Button>
+                            </Link>
+                          )}
                         </div>
                       )
                     })}
                   </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <Award className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Complete courses to earn certificates</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Help */}
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="pt-6">
-                <h3 className="font-semibold text-blue-900 mb-2">Need Help?</h3>
-                <p className="text-sm text-blue-700 mb-4">
-                  Our compliance experts are available to answer questions about training content.
-                </p>
-                <Button variant="outline" size="sm" className="w-full">
-                  Contact Support
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                  {/* Certificate */}
+                  {assignment.status === 'completed' && assignment.certificate && (
+                    <div className="p-4 bg-white rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Award className="w-10 h-10 text-yellow-500" />
+                          <div>
+                            <div className="font-semibold">Certificate Earned</div>
+                            <div className="text-sm text-gray-600">
+                              #{assignment.certificate.certificate_number} • Expires {new Date(assignment.certificate.expires_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <Link href={`/training/certificate/${assignment.certificate.certificate_number}`}>
+                          <Button variant="outline" size="sm">
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA for incomplete */}
+                  {assignment.status !== 'completed' && nextSection && (
+                    <Link href={`/training/${assignment.track}/${nextSection.number}?a=${assignment.id}`}>
+                      <Button className="w-full">
+                        {assignment.status === 'pending' ? 'Start Training' : 'Continue Training'}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </div>
