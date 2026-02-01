@@ -763,14 +763,15 @@ export async function getHiringStatesWithProgress(): Promise<HiringStateWithProg
 
   if (!user) return []
 
-  // Get all hiring states
-  const { data: states } = await supabase
-    .from('hiring_states')
-    .select('state_code')
-    .eq('org_id', user.id)
-    .order('state_code')
+  try {
+    // Get all hiring states
+    const { data: states, error } = await supabase
+      .from('hiring_states')
+      .select('state_code')
+      .eq('org_id', user.id)
+      .order('state_code')
 
-  if (!states || states.length === 0) return []
+    if (error || !states || states.length === 0) return []
 
   // Get all remediation items
   const { data: items } = await supabase
@@ -816,6 +817,10 @@ export async function getHiringStatesWithProgress(): Promise<HiringStateWithProg
       is_compliant: isRegulated ? (verification?.is_compliant || false) : true,
     }
   })
+  } catch (e) {
+    console.error('Error fetching hiring states with progress:', e)
+    return []
+  }
 }
 
 // Check if state has existing compliance work (for removal warning)

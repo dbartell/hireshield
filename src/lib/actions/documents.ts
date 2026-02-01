@@ -286,13 +286,23 @@ export async function getDocuments() {
     return []
   }
 
-  const { data: documents } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('org_id', user.id)
-    .order('created_at', { ascending: false })
+  try {
+    const { data: documents, error } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('org_id', user.id)
+      .order('created_at', { ascending: false })
 
-  return documents || []
+    if (error) {
+      console.error('Error fetching documents:', error)
+      return []
+    }
+
+    return documents || []
+  } catch (e) {
+    console.error('Error fetching documents:', e)
+    return []
+  }
 }
 
 export async function createDocument(
