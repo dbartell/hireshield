@@ -26,11 +26,14 @@ export const stripe = {
   get webhooks() { return getStripe().webhooks },
 }
 
-// Price IDs - set these after creating products in Stripe Dashboard
+// Price IDs from Stripe Dashboard
 export const PRICES = {
-  PILOT: process.env.STRIPE_PRICE_PILOT || 'price_pilot', // $99/mo for first 10
-  MONTHLY: process.env.STRIPE_PRICE_MONTHLY || 'price_monthly', // $199/mo
-  ANNUAL: process.env.STRIPE_PRICE_ANNUAL || 'price_annual', // $1,990/yr (save 2 months)
+  STARTER: process.env.STRIPE_PRICE_STARTER!,
+  GROWTH: process.env.STRIPE_PRICE_GROWTH!,
+  SCALE: process.env.STRIPE_PRICE_SCALE!,
+  ENTERPRISE: process.env.STRIPE_PRICE_ENTERPRISE!,
+  // Aliases for backwards compat
+  PILOT: process.env.STRIPE_PRICE_STARTER!,
 } as const
 
 export type PriceId = (typeof PRICES)[keyof typeof PRICES]

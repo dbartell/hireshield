@@ -9,23 +9,21 @@ import {
   ClipboardCheck, 
   FileText, 
   GraduationCap, 
-  Users, 
+  UserCheck, 
   Settings, 
   Menu, 
-  X 
+  X,
+  Globe
 } from "lucide-react"
 import { SignOutButton } from "@/components/auth/sign-out-button"
-import { SidebarStates } from "@/components/layout/sidebar-states"
 
-const topNavItems = [
+const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/audit", label: "Compliance Audit", icon: ClipboardCheck },
-]
-
-const bottomNavItems = [
+  { href: "/audit", label: "Audit", icon: ClipboardCheck },
   { href: "/documents", label: "Documents", icon: FileText },
+  { href: "/disclosures", label: "Disclosures", icon: Globe },
   { href: "/training", label: "Training", icon: GraduationCap },
-  { href: "/consent", label: "Consent Tracking", icon: Users },
+  { href: "/consent", label: "Consent", icon: UserCheck },
 ]
 
 interface MobileSidebarProps {
@@ -47,7 +45,7 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <Shield className="w-5 h-5" />
           </div>
-          <span className="font-bold text-lg">AIHireLaw</span>
+          <span className="font-bold text-lg">AI Hire Law</span>
         </Link>
         <button
           onClick={() => setIsOpen(true)}
@@ -72,7 +70,7 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
       {/* Slide-out drawer */}
       <aside 
         className={`
-          md:hidden fixed top-0 left-0 bottom-0 w-72 bg-gray-900 text-white z-50 
+          md:hidden fixed top-0 left-0 bottom-0 w-64 bg-gray-900 text-white z-50 
           transform transition-transform duration-300 ease-in-out flex flex-col
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
@@ -82,7 +80,7 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5" />
             </div>
-            <span className="font-bold text-lg">AIHireLaw</span>
+            <span className="font-bold text-lg">AI Hire Law</span>
           </Link>
           <button
             onClick={closeMenu}
@@ -93,12 +91,11 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 p-4 overflow-y-auto">
-          {/* Top Nav Items */}
+        <nav className="flex-1 p-3 overflow-y-auto">
           <div className="space-y-1">
-            {topNavItems.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <Link
                   key={item.href}
@@ -119,43 +116,13 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
             })}
           </div>
 
-          {/* States Accordion */}
-          <div className="mt-4 pt-4 border-t border-gray-800">
-            <SidebarStates onNavigate={closeMenu} />
-          </div>
-
-          {/* Bottom Nav Items */}
-          <div className="mt-4 pt-4 border-t border-gray-800 space-y-1">
-            {bottomNavItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMenu}
-                  className={`
-                    flex items-center gap-3 px-3 py-3 rounded-lg transition-colors
-                    ${isActive 
-                      ? 'bg-blue-600 text-white' 
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                    }
-                  `}
-                >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
-                </Link>
-              )
-            })}
-          </div>
-
-          <div className="mt-8 pt-4 border-t border-gray-800">
+          <div className="mt-6 pt-4 border-t border-gray-800">
             <Link
               href="/settings"
               onClick={closeMenu}
               className={`
                 flex items-center gap-3 px-3 py-3 rounded-lg transition-colors
-                ${pathname === '/settings' 
+                ${pathname.startsWith('/settings')
                   ? 'bg-blue-600 text-white' 
                   : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }
@@ -168,7 +135,7 @@ export function MobileSidebar({ orgName, userEmail }: MobileSidebarProps) {
         </nav>
 
         <div className="p-4 border-t border-gray-800">
-          <div className="mb-3 px-3">
+          <div className="mb-3 px-1">
             <div className="text-sm font-medium text-white truncate">{orgName}</div>
             <div className="text-xs text-gray-400 truncate">{userEmail}</div>
           </div>

@@ -1,19 +1,63 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
-  Shield, AlertTriangle, CheckCircle, Clock, FileText, 
-  ClipboardCheck, GraduationCap, Users, ArrowRight, 
-  TrendingUp, Calendar
+  CheckCircle2, Circle, ArrowRight, Shield, ChevronRight,
+  Sparkles, AlertCircle, Calendar, FileText, ExternalLink
 } from "lucide-react"
-import { getDashboardData } from "@/lib/actions/dashboard"
-import { OnboardingWizard } from "@/components/onboarding-wizard"
-import { UrgencyAlerts } from "@/components/urgency-alerts"
-import { generateAlerts } from "@/lib/alerts"
-import { CalendlyCTA, ContextualHelp } from "@/components/calendly-cta"
-import { ComplianceScoreHelp, StateLawsHelp } from "@/components/help-content"
-import { UpcomingRenewals } from "@/components/upcoming-renewals"
-import { DeleteAccountButton } from "@/components/admin/delete-account-button"
+import { createClient } from "@/lib/supabase/server"
+import { stateCompliance, generalRequirements, getRequirementsForStates } from "@/data/compliance-requirements"
+
+async function getDashboardData() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const orgId = user.id
+
+  // Get organization with states
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name, states')
+    .eq('id', orgId)
+    .single()
+
+  // Get completed documents
+  const { data: documents } = await supabase
+    .from('documents')
+    .select('doc_type')
+    .eq('org_id', orgId)
+
+  // Get disclosure page status
+  const { data: disclosurePage } = await supabase
+    .from('disclosure_pages')
+    .select('is_published')
+    .eq('organization_id', orgId)
+    .single()
+
+  // Get training completion
+  const { count: trainingComplete } = await supabase
+    .from('training_assignments')
+    .select('*', { count: 'exact', head: true })
+    .eq('org_id', orgId)
+    .eq('status', 'completed')
+
+  // Get audit status  
+  const { count: auditsCount } = await supabase
+    .from('audits')
+    .select('*', { count: 'exact', head: true })
+    .eq('org_id', orgId)
+
+  const completedDocTypes = documents?.map(d => d.doc_type) || []
+
+  return {
+    orgName: org?.name || 'Your Company',
+    states: org?.states || [],
+    completedDocTypes,
+    hasDisclosure: disclosurePage?.is_published || false,
+    hasTraining: (trainingComplete || 0) > 0,
+    hasAudit: (auditsCount || 0) > 0,
+  }
+}
 
 export default async function DashboardPage() {
   const data = await getDashboardData()
@@ -22,332 +66,238 @@ export default async function DashboardPage() {
     return <div className="p-8">Loading...</div>
   }
 
-  // Generate urgency alerts based on user state
-  const alerts = generateAlerts({
-    hiringStates: data.hiringStates,
-    documentsCount: data.documentsCount,
-    consentCount: data.consentCount,
-    lastAuditDate: data.lastAuditDate,
-    trainingExpired: data.trainingExpired,
-  })
+  const hasStates = data.states.length > 0
+  const { stateRequirements, generalRequirements: general } = getRequirementsForStates(data.states)
 
-  const isNewUser = data.auditsCount === 0 && data.documentsCount === 0
-
-  const getRiskLevel = (score: number) => {
-    if (score >= 80) return { level: "Good", color: "text-green-600", bg: "bg-green-100" }
-    if (score >= 60) return { level: "Fair", color: "text-yellow-600", bg: "bg-yellow-100" }
-    if (score >= 40) return { level: "At Risk", color: "text-orange-600", bg: "bg-orange-100" }
-    return { level: "Critical", color: "text-red-600", bg: "bg-red-100" }
+  // Build completion map
+  const isComplete = (reqId: string, docType?: string): boolean => {
+    if (docType && data.completedDocTypes.includes(docType)) return true
+    if (reqId === 'training' && data.hasTraining) return true
+    if (reqId.includes('audit') && data.hasAudit) return true
+    if (reqId.includes('disclosure') && data.hasDisclosure) return true
+    return false
   }
 
-  const risk = getRiskLevel(data.complianceScore)
+  // Calculate progress
+  let totalReqs = 0
+  let completedReqs = 0
+  
+  stateRequirements.forEach(({ requirements }) => {
+    requirements.forEach(req => {
+      totalReqs++
+      if (isComplete(req.id, req.docType)) completedReqs++
+    })
+  })
+  general.forEach(req => {
+    totalReqs++
+    if (isComplete(req.id, req.docType)) completedReqs++
+  })
 
-  // State compliance deadlines
-  const upcomingDeadlines = [
-    { state: "Illinois", law: "HB 3773", date: "2026-01-01", status: "passed" },
-    { state: "Colorado", law: "AI Act", date: "2026-02-01", status: "upcoming" },
-  ]
+  const progress = totalReqs > 0 ? Math.round((completedReqs / totalReqs) * 100) : 0
+  const allComplete = completedReqs === totalReqs && totalReqs > 0
+
+  // Find next action
+  let nextAction: { title: string; href: string; description: string } | null = null
+  
+  if (!hasStates) {
+    nextAction = {
+      title: 'Set up your compliance profile',
+      description: 'Tell us where you hire so we can show your requirements',
+      href: '/audit',
+    }
+  } else {
+    for (const { requirements } of stateRequirements) {
+      for (const req of requirements) {
+        if (!isComplete(req.id, req.docType)) {
+          nextAction = { title: req.title, description: req.description, href: req.href }
+          break
+        }
+      }
+      if (nextAction) break
+    }
+    if (!nextAction) {
+      for (const req of general) {
+        if (!isComplete(req.id, req.docType)) {
+          nextAction = { title: req.title, description: req.description, href: req.href }
+          break
+        }
+      }
+    }
+  }
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen p-6 md:p-8 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back{data.userName ? `, ${data.userName}` : ''}! Here&apos;s your compliance overview.</p>
-        </div>
-        <DeleteAccountButton isSuperAdmin={data.isSuperAdmin} />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Welcome back!</h1>
+        <p className="text-gray-600 mt-1">{data.orgName}</p>
       </div>
 
-      {/* Onboarding Wizard (for new users) */}
-      {isNewUser && (
-        <OnboardingWizard
-          userName={data.userName}
-          hasCompletedAudit={data.auditsCount > 0}
-          hasGeneratedDoc={data.documentsCount > 0}
-          leadData={data.leadData}
-        />
+      {/* No states configured */}
+      {!hasStates && (
+        <Link href="/audit">
+          <div className="bg-blue-600 text-white rounded-xl p-5 mb-6 hover:bg-blue-700 transition-colors cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-lg">Let's get started</div>
+                <div className="text-blue-100 text-sm mt-1">
+                  Tell us where you hire and what tools you use to see your compliance requirements.
+                </div>
+              </div>
+              <ArrowRight className="w-6 h-6" />
+            </div>
+          </div>
+        </Link>
       )}
 
-      {/* Urgency Alerts */}
-      <UrgencyAlerts alerts={alerts} />
+      {/* Progress bar */}
+      {hasStates && (
+        <div className="bg-white rounded-xl border p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold">Compliance Progress</span>
+            </div>
+            <span className="text-sm text-gray-600">{completedReqs} of {totalReqs}</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${allComplete ? 'bg-green-500' : 'bg-blue-600'}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          {allComplete && (
+            <div className="mt-3 flex items-center gap-2 text-green-600 text-sm">
+              <Sparkles className="w-4 h-4" />
+              <span>All requirements complete! Keep tracking consent and stay current.</span>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Compliance Score Card */}
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Compliance Score
-              <ComplianceScoreHelp />
-            </CardTitle>
-            <CardDescription>Overall compliance status across all regulated states</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-8">
-              <div className={`w-32 h-32 rounded-full ${risk.bg} flex items-center justify-center`}>
-                <div className="text-center">
-                  <div className={`text-4xl font-bold ${risk.color}`}>{data.complianceScore}</div>
-                  <div className={`text-sm font-medium ${risk.color}`}>{risk.level}</div>
+      {/* Next Action CTA */}
+      {nextAction && hasStates && !allComplete && (
+        <Link href={nextAction.href}>
+          <div className="bg-blue-600 text-white rounded-xl p-5 mb-6 hover:bg-blue-700 transition-colors cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-blue-100 text-sm mb-1">Next step</div>
+                <div className="font-semibold text-lg">{nextAction.title}</div>
+                <div className="text-blue-100 text-sm mt-1">{nextAction.description}</div>
+              </div>
+              <ArrowRight className="w-6 h-6" />
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* State-specific requirements */}
+      {hasStates && stateRequirements.length > 0 && (
+        <div className="space-y-4 mb-6">
+          {stateRequirements.map(({ state, requirements }) => (
+            <div key={state.code} className="bg-white rounded-xl border overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-gray-900">{state.name}</div>
+                  <div className="text-xs text-gray-500">{state.law}</div>
+                </div>
+                <div className={`text-xs px-2 py-1 rounded-full ${
+                  state.isActive 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {state.isActive ? 'Active' : `Effective ${state.effectiveDate}`}
                 </div>
               </div>
-              <div className="flex-1">
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Audit Complete</span>
-                      <span className={data.latestAudit ? "text-green-600" : "text-gray-400"}>
-                        {data.latestAudit ? "✓" : "—"}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-green-500 rounded-full" style={{ width: data.latestAudit ? "100%" : "0%" }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Documents Generated</span>
-                      <span>{data.documentsCount}/5</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (data.documentsCount / 5) * 100)}%` }} />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Training Complete</span>
-                      <span>{data.trainingCompleted}/{data.trainingTotal}</span>
-                    </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-purple-500 rounded-full" style={{ width: `${(data.trainingCompleted / data.trainingTotal) * 100}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Link href="/audit">
-              <Button variant="outline" className="w-full justify-start">
-                <ClipboardCheck className="w-4 h-4 mr-2" />
-                Run New Audit
-              </Button>
-            </Link>
-            <Link href="/documents">
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="w-4 h-4 mr-2" />
-                Generate Document
-              </Button>
-            </Link>
-            <Link href="/training">
-              <Button variant="outline" className="w-full justify-start">
-                <GraduationCap className="w-4 h-4 mr-2" />
-                Continue Training
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Regulated States</p>
-                <p className="text-2xl font-bold">{data.hiringStates.length}</p>
-              </div>
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-600">
-              {data.hiringStates.length > 0 ? data.hiringStates.join(", ") : "None selected"}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">AI Tools Tracked</p>
-                <p className="text-2xl font-bold">{data.toolsCount}</p>
-              </div>
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-green-600">
-              {data.toolsCount > 0 ? "Tools registered" : "Add your tools"}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Documents</p>
-                <p className="text-2xl font-bold">{data.documentsCount}</p>
-              </div>
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-600">
-              Generated
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Consent Records</p>
-                <p className="text-2xl font-bold">{data.consentCount}</p>
-              </div>
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-orange-600" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-600">
-              Last 30 days
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Upcoming Renewals */}
-        <UpcomingRenewals renewals={data.upcomingRenewals} />
-
-        {/* Deadlines */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Compliance Deadlines
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingDeadlines.map((deadline, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{deadline.state}</div>
-                    <div className="text-sm text-gray-600">{deadline.law}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{deadline.date}</div>
-                    {deadline.status === "passed" ? (
-                      <span className="text-xs text-green-600 flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Active
-                      </span>
-                    ) : (
-                      <span className="text-xs text-orange-600 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Upcoming
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Documents</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {data.recentDocs && data.recentDocs.length > 0 ? (
-              <div className="space-y-4">
-                {data.recentDocs.map((doc) => (
-                  <div key={doc.id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{doc.title}</div>
-                      <div className="text-xs text-gray-600">
-                        {new Date(doc.created_at).toLocaleDateString()}
+              <div className="divide-y">
+                {requirements.map((req) => {
+                  const done = isComplete(req.id, req.docType)
+                  return (
+                    <Link 
+                      key={req.id} 
+                      href={req.href}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                    >
+                      {done ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className={`font-medium text-sm ${done ? 'text-gray-500' : 'text-gray-900'}`}>
+                          {req.title}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {req.description}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No documents yet</p>
-                <Link href="/documents">
-                  <Button variant="link" size="sm">Generate your first document</Button>
-                </Link>
-              </div>
-            )}
-            {data.recentDocs && data.recentDocs.length > 0 && (
-              <Link href="/documents">
-                <Button variant="link" className="mt-4 p-0">
-                  View all documents <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Alert Banner */}
-      {data.complianceScore < 80 && (
-        <Card className="mt-6 border-orange-200 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-800">Action Required</h3>
-                <p className="text-orange-700 text-sm mt-1">
-                  Your compliance score indicates gaps that could expose you to penalties. 
-                  Complete the remaining documents and training to improve your score.
-                </p>
-                <div className="flex gap-3 mt-3">
-                  <Link href="/audit">
-                    <Button size="sm" variant="outline">
-                      View Recommendations
-                    </Button>
-                  </Link>
-                  <CalendlyCTA 
-                    variant="inline" 
-                    title="Need help prioritizing?" 
-                  />
-                </div>
+                      {req.estimatedTime && !done && (
+                        <span className="text-xs text-gray-400">{req.estimatedTime}</span>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    </Link>
+                  )
+                })}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Calendly Help CTA - shown for users who might be stuck */}
-      {data.complianceScore < 60 && (
-        <div className="mt-6">
-          <CalendlyCTA
-            variant="banner"
-            title="Not sure where to start?"
-            description="Book a free 15-minute compliance review. We'll create a prioritized action plan for you."
-          />
+          ))}
         </div>
       )}
 
-      {/* Floating Calendly Button */}
-      <CalendlyCTA variant="floating" />
+      {/* General requirements */}
+      {hasStates && (
+        <div className="bg-white rounded-xl border overflow-hidden mb-6">
+          <div className="px-4 py-3 bg-gray-50 border-b">
+            <div className="font-semibold text-gray-900">General Best Practices</div>
+            <div className="text-xs text-gray-500">Recommended for all organizations</div>
+          </div>
+          <div className="divide-y">
+            {general.map((req) => {
+              const done = isComplete(req.id, req.docType)
+              return (
+                <Link 
+                  key={req.id} 
+                  href={req.href}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+                >
+                  {done ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-medium text-sm ${done ? 'text-gray-500' : 'text-gray-900'}`}>
+                      {req.title}
+                    </div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {req.description}
+                    </div>
+                  </div>
+                  {req.estimatedTime && !done && (
+                    <span className="text-xs text-gray-400">{req.estimatedTime}</span>
+                  )}
+                  <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Help CTA */}
+      <div className="text-center">
+        <p className="text-sm text-gray-500">
+          Need help? {' '}
+          <a 
+            href="https://calendly.com/aihirelaw/compliance-review" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            Book a free compliance review
+          </a>
+        </p>
+      </div>
     </div>
   )
 }

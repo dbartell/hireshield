@@ -23,13 +23,17 @@ export async function getDashboardData() {
     .single()
 
   // Get organization
-  const { data: org } = await supabase
+  const { data: org, error: orgError } = await supabase
     .from('organizations')
-    .select('*, is_super_admin')
+    .select('*')
     .eq('id', orgId)
     .single()
   
-  const isSuperAdmin = org?.is_super_admin || false
+  console.log('[DEBUG] orgId:', orgId)
+  console.log('[DEBUG] org:', org)
+  console.log('[DEBUG] orgError:', orgError)
+  
+  const isSuperAdmin = org?.is_super_admin === true
 
   // Get latest audit
   const { data: latestAudit } = await supabase

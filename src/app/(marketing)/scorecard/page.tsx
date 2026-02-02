@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, ArrowRight, ArrowLeft, AlertTriangle, Shield, Loader2 } from "lucide-react"
@@ -21,6 +22,9 @@ interface ScorecardData {
 export default function ScorecardPage() {
   const [step, setStep] = useState<Step>('states')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isStartingTrial, setIsStartingTrial] = useState(false)
+  const [trialError, setTrialError] = useState<string | null>(null)
+  const router = useRouter()
   const [data, setData] = useState<ScorecardData>({
     states: [],
     tools: [],
@@ -28,6 +32,45 @@ export default function ScorecardPage() {
     email: '',
     company: ''
   })
+
+  const startFreeTrial = async () => {
+    setIsStartingTrial(true)
+    setTrialError(null)
+
+    try {
+      const res = await fetch('/api/scorecard/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          company: data.company,
+          states: data.states,
+          tools: data.tools,
+          riskScore: calculateScore().riskScore,
+        }),
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        if (result.redirect) {
+          router.push(result.redirect)
+          return
+        }
+        setTrialError(result.error || 'Failed to start trial')
+        return
+      }
+
+      // Redirect to Stripe checkout
+      if (result.url) {
+        window.location.href = result.url
+      }
+    } catch (err) {
+      setTrialError('Something went wrong. Please try again.')
+    } finally {
+      setIsStartingTrial(false)
+    }
+  }
 
   const submitLead = async (riskScore: number) => {
     setIsSubmitting(true)
@@ -361,6 +404,47 @@ export default function ScorecardPage() {
         {/* Step 5: Results */}
         {step === 'results' && (
           <div className="space-y-6">
+            {/* CTA at top */}
+            <Card className="bg-blue-600 text-white">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Shield className="w-12 h-12" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Ready to get compliant?</h3>
+                    <p className="text-blue-100 text-sm">
+                      AIHireLaw can help you fix these issues with automated documents, training, and tracking.
+                    </p>
+                  </div>
+                </div>
+                {trialError && (
+                  <div className="mt-3 p-2 bg-red-500/20 border border-red-300/30 rounded text-sm">
+                    {trialError}
+                  </div>
+                )}
+                <div className="mt-4 flex gap-3">
+                  <Button 
+                    onClick={startFreeTrial}
+                    disabled={isStartingTrial}
+                    className="flex-1 bg-white text-blue-600 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {isStartingTrial ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      'Start Free Trial'
+                    )}
+                  </Button>
+                  <a href="https://calendly.com/aihirelaw/compliance-review">
+                    <Button className="bg-orange-500 text-white hover:bg-orange-600 border-0 cursor-pointer">
+                      Talk to Sales
+                    </Button>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="text-center">
                 <CardTitle>Your Compliance Score</CardTitle>
@@ -418,28 +502,6 @@ export default function ScorecardPage() {
                 </CardContent>
               </Card>
             )}
-
-            <Card className="bg-blue-600 text-white">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <Shield className="w-12 h-12" />
-                  <div>
-                    <h3 className="font-semibold text-lg">Ready to get compliant?</h3>
-                    <p className="text-blue-100 text-sm">
-                      AIHireLaw can help you fix these issues with automated documents, training, and tracking.
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 flex gap-3">
-                  <Button className="bg-white text-blue-600 hover:bg-gray-100 flex-1">
-                    Start Free Trial
-                  </Button>
-                  <Button variant="outline" className="border-white text-white hover:bg-blue-700">
-                    Talk to Sales
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
