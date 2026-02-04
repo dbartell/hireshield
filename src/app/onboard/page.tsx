@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, ArrowRight, ArrowLeft, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react'
+import { Shield, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
@@ -50,12 +50,13 @@ function calculateRiskScore(data: OnboardData): number {
   return Math.min(score, 100)
 }
 
+// LocalStorage key for onboard data
+const ONBOARD_STORAGE_KEY = 'hireshield_onboard_data'
+
 export default function OnboardPage() {
   const [step, setStep] = useState<Step>('states')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [existingUser, setExistingUser] = useState(false)
-  const [magicLinkSent, setMagicLinkSent] = useState(false)
   const router = useRouter()
   
   const [data, setData] = useState<OnboardData>({
@@ -67,30 +68,13 @@ export default function OnboardPage() {
     company: ''
   })
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-
-  // Check if user is already logged in
+  // Check if user is already logged in - redirect to dashboard
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        setIsLoggedIn(true)
-        setCurrentUserId(user.id)
-        
-        // Check if they have states set up
-        const { data: org } = await supabase
-          .from('organizations')
-          .select('states')
-          .eq('id', user.id)
-          .single()
-        
-        if (org?.states?.length > 0) {
-          // Fully set up, go to dashboard
-          router.push('/dashboard')
-        }
-        // Otherwise let them complete onboarding
+        router.push('/dashboard')
       }
     }
     checkAuth()
@@ -131,34 +115,23 @@ export default function OnboardPage() {
     }))
   }
 
-  const createAccountAndContinue = async () => {
+  const submitAndContinue = async () => {
     setIsCreating(true)
     setError(null)
-    setExistingUser(false)
 
     try {
       const riskScore = calculateRiskScore(data)
-      const supabase = createClient()
-
-      // If already logged in, just update their org and go to dashboard
-      if (isLoggedIn && currentUserId) {
-        await supabase
-          .from('organizations')
-          .update({
-            name: data.company,
-            states: data.states,
-            quiz_tools: data.tools,
-            quiz_usages: data.usages,
-            quiz_risk_score: riskScore,
-            employee_count: data.employeeCount,
-          })
-          .eq('id', currentUserId)
-        
-        router.push('/dashboard?welcome=true')
-        return
-      }
       
-      const res = await fetch('/api/onboard/signup', {
+      // Save to localStorage first
+      const onboardData = {
+        ...data,
+        riskScore,
+        completedAt: new Date().toISOString(),
+      }
+      localStorage.setItem(ONBOARD_STORAGE_KEY, JSON.stringify(onboardData))
+
+      // Save lead to database (fire and forget - don't block on errors)
+      fetch('/api/onboard/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,44 +143,16 @@ export default function OnboardPage() {
           employeeCount: data.employeeCount,
           riskScore,
         }),
+      }).catch(() => {
+        // Ignore errors - localStorage is the source of truth
       })
 
-      const result = await res.json()
-
-      if (!res.ok) {
-        setError(result.error || 'Failed to create account')
-        setIsCreating(false)
-        return
-      }
-
-      // Existing user - magic link sent (or fallback to sign in)
-      if (result.existingUser) {
-        if (result.magicLinkSent) {
-          setMagicLinkSent(true)
-        } else {
-          setExistingUser(true)
-        }
-        setIsCreating(false)
-        return
-      }
-
-      // New user - sign them in with the temp password
-      if (result.tempPassword && result.email) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: result.email,
-          password: result.tempPassword,
-        })
-
-        if (signInError) {
-          console.error('Auto sign-in failed:', signInError)
-          setError('Account created but sign-in failed. Please try logging in.')
-          setIsCreating(false)
-          return
-        }
-
-        // Success! Go to dashboard
+      // Show creating state briefly then redirect
+      setStep('creating')
+      
+      setTimeout(() => {
         router.push('/dashboard?welcome=true')
-      }
+      }, 1500)
     } catch (err) {
       setError('Something went wrong. Please try again.')
       setIsCreating(false)
@@ -217,7 +162,6 @@ export default function OnboardPage() {
   const progress = ['states', 'tools', 'usage', 'employees', 'email'].indexOf(step) + 1
   const totalSteps = 5
 
-  // Use light mode only to avoid hydration mismatch
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -430,11 +374,9 @@ export default function OnboardPage() {
         {step === 'email' && (
           <Card className="bg-white border-gray-200 shadow-sm">
             <CardContent className="pt-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {isLoggedIn ? 'Confirm your setup' : 'Create your account'}
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Almost there!</h1>
               <p className="text-gray-600 mb-6">
-                {isLoggedIn ? 'Review your details and continue to your dashboard.' : 'We\'ll set up your personalized compliance dashboard.'}
+                Enter your details to see your personalized compliance checklist.
               </p>
               
               {error && (
@@ -443,95 +385,62 @@ export default function OnboardPage() {
                 </div>
               )}
               
-              {magicLinkSent ? (
-                <div className="text-center py-6">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email!</h2>
-                  <p className="text-gray-600 mb-4">
-                    We sent a sign-in link to <strong className="text-gray-900">{data.email}</strong>
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Click the link in your email to access your dashboard instantly.
-                  </p>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Work Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={data.email}
+                    onChange={(e) => setData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="you@company.com"
+                  />
                 </div>
-              ) : existingUser ? (
-                <div className="text-center py-6">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">Welcome back!</h2>
-                  <p className="text-gray-600 mb-4">
-                    You already have an account with <strong className="text-gray-900">{data.email}</strong>
-                  </p>
-                  <Button 
-                    onClick={() => router.push(`/login?email=${encodeURIComponent(data.email)}&redirect=/dashboard`)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Sign In to Continue
-                  </Button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    name="organization"
+                    autoComplete="organization"
+                    value={data.company}
+                    onChange={(e) => setData(prev => ({ ...prev, company: e.target.value }))}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Acme Inc."
+                  />
                 </div>
-              ) : (
-                <>
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Work Email
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        autoComplete="email"
-                        value={data.email}
-                        onChange={(e) => setData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="you@company.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Company Name
-                      </label>
-                      <input
-                        type="text"
-                        name="organization"
-                        autoComplete="organization"
-                        value={data.company}
-                        onChange={(e) => setData(prev => ({ ...prev, company: e.target.value }))}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Acme Inc."
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => goToStep('usage')} className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                      <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                    </Button>
-                    <Button 
-                      onClick={createAccountAndContinue}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                      disabled={!data.email || !data.company || isCreating}
-                    >
-                      {isCreating ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {isLoggedIn ? 'Saving...' : 'Creating account...'}
-                        </>
-                      ) : (
-                        <>
-                          Get My Compliance Plan <ArrowRight className="ml-2 w-4 h-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <p className="text-xs text-gray-500 text-center mt-4">
-                    By continuing, you agree to our Terms of Service. No credit card required.
-                  </p>
-                </>
-              )}
+              </div>
+              
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => goToStep('employees')} className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                </Button>
+                <Button 
+                  onClick={submitAndContinue}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  disabled={!data.email || !data.company || isCreating}
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      See My Compliance Plan <ArrowRight className="ml-2 w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center mt-4">
+                No account required. We'll show you exactly what you need.
+              </p>
             </CardContent>
           </Card>
         )}
@@ -540,7 +449,7 @@ export default function OnboardPage() {
         {step === 'creating' && (
           <div className="text-center py-12">
             <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Setting up your dashboard...</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Building your compliance plan...</h2>
             <p className="text-gray-600">This will only take a moment.</p>
           </div>
         )}
