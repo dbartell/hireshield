@@ -63,8 +63,25 @@ export async function POST(req: NextRequest) {
         const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
 
         if (existingUser) {
-          // User exists - just update their subscription
-          userId = existingUser.id
+          // User already exists - update their org subscription status and return
+          await supabaseAdmin
+            .from('organizations')
+            .update({ subscription_status: 'active' })
+            .eq('id', existingUser.id)
+
+          // Update Stripe customer with user ID
+          await stripe.customers.update(customer.id, {
+            metadata: {
+              ...customer.metadata,
+              supabase_user_id: existingUser.id,
+            },
+          })
+
+          return NextResponse.json({ 
+            success: true, 
+            existingUser: true,
+            message: 'Account already exists. Please sign in.',
+          })
         } else {
           // Get quiz data from leads table
           const { data: lead } = await supabaseAdmin
