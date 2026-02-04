@@ -40,23 +40,31 @@ export async function POST(req: NextRequest) {
     // Stripe checkout flow (including guest checkout)
     else if (sessionId) {
       const session = await stripe.checkout.sessions.retrieve(sessionId)
+      console.log('Session retrieved:', { customer: session.customer, customer_email: session.customer_email })
 
       if (!session.customer) {
         return NextResponse.json({ error: 'Invalid session' }, { status: 400 })
       }
 
       const customer = await stripe.customers.retrieve(session.customer as string)
+      console.log('Customer retrieved:', { id: customer.id, deleted: customer.deleted, email: 'email' in customer ? customer.email : 'N/A', metadata: 'metadata' in customer ? customer.metadata : 'N/A' })
       
       if (customer.deleted) {
         return NextResponse.json({ error: 'Customer not found' }, { status: 400 })
       }
 
-      // Check if user already exists
-      userId = customer.metadata?.supabase_user_id || null
+      // Get email from customer (type narrowing for non-deleted customer)
+      const customerEmail = (customer as { email?: string | null }).email
+      const customerMetadata = (customer as { metadata?: Record<string, string> }).metadata
+
+      // Check if user already exists in metadata
+      userId = customerMetadata?.supabase_user_id || null
+      console.log('Initial userId from metadata:', userId)
 
       // Guest checkout - need to create user account
-      if (!userId && 'email' in customer && customer.email) {
-        const email = customer.email
+      if (!userId && customerEmail) {
+        const email = customerEmail
+        console.log('Guest checkout flow, email:', email)
 
         // Check if user exists by email (shouldn't, but just in case)
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
@@ -72,7 +80,7 @@ export async function POST(req: NextRequest) {
           // Update Stripe customer with user ID
           await stripe.customers.update(customer.id, {
             metadata: {
-              ...customer.metadata,
+              ...customerMetadata,
               supabase_user_id: existingUser.id,
             },
           })
@@ -151,7 +159,7 @@ export async function POST(req: NextRequest) {
           // Update Stripe customer with user ID
           await stripe.customers.update(customer.id, {
             metadata: {
-              ...customer.metadata,
+              ...customerMetadata,
               supabase_user_id: userId,
             },
           })
