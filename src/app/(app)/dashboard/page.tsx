@@ -291,6 +291,9 @@ function StatCard({
 // ============================================================
 // MAIN DASHBOARD COMPONENT
 // ============================================================
+// LocalStorage key for onboard data
+const ONBOARD_STORAGE_KEY = 'hireshield_onboard_data'
+
 export default function DashboardPage() {
   const router = useRouter()
   const [data, setData] = useState<{
@@ -309,6 +312,7 @@ export default function DashboardPage() {
     documentsGenerated: number
   } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isGuest, setIsGuest] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallStatus, setPaywallStatus] = useState<PaywallStatus | null>(null)
@@ -320,6 +324,31 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
+        // Check for guest data in localStorage
+        const storedData = localStorage.getItem(ONBOARD_STORAGE_KEY)
+        if (storedData) {
+          try {
+            const onboardData = JSON.parse(storedData)
+            setIsGuest(true)
+            setData({
+              orgName: onboardData.company || 'Your Company',
+              states: onboardData.states || [],
+              completedDocTypes: [],
+              hasDisclosure: false,
+              hasTraining: false,
+              hasAudit: true,
+              riskScore: onboardData.riskScore || null,
+              trainingComplete: 0,
+              trainingTotal: 0,
+              consentCount: 0,
+              subscriptionStatus: null,
+              trialStartedAt: null,
+              documentsGenerated: 0,
+            })
+          } catch (e) {
+            // Invalid localStorage data
+          }
+        }
         setLoading(false)
         return
       }
@@ -449,9 +478,15 @@ export default function DashboardPage() {
     }
   }, [data])
 
-  // Handle task click - check paywall
+  // Handle task click - check paywall or guest mode
   const handleTaskClick = (href: string) => {
     if (!data) return
+    
+    // If guest, redirect to login with return URL
+    if (isGuest) {
+      router.push(`/login?redirect=${encodeURIComponent(href)}`)
+      return
+    }
     
     const status = checkPaywallStatus({
       trialStartedAt: data.trialStartedAt,
@@ -500,6 +535,21 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
       {showConfetti && <Confetti />}
+      
+      {/* Guest Mode Banner */}
+      {isGuest && (
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+          <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              <span className="font-medium">You're viewing a preview. Create an account to save your progress and generate documents.</span>
+            </div>
+            <Link href="/login" className="bg-white text-blue-600 px-4 py-1.5 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors">
+              Create Account
+            </Link>
+          </div>
+        </div>
+      )}
       
       {/* Paywall Modal */}
       {showPaywall && paywallStatus && (
