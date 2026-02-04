@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { 
   CheckCircle2, Circle, ArrowRight, Shield, ChevronRight,
   Sparkles, AlertCircle, Calendar, FileText, Clock, 
@@ -18,6 +19,8 @@ import {
   ComplianceRequirement,
   StateCompliance
 } from "@/data/compliance-requirements"
+import { PaywallModal } from "@/components/paywall-modal"
+import { checkPaywallStatus, PaywallStatus } from "@/lib/paywall"
 
 // ============================================================
 // CIRCULAR PROGRESS RING COMPONENT
@@ -141,12 +144,14 @@ function TaskCard({
   requirement, 
   state, 
   isComplete, 
-  isInProgress = false 
+  isInProgress = false,
+  onTaskClick,
 }: { 
   requirement: ComplianceRequirement
   state?: StateCompliance
   isComplete: boolean
   isInProgress?: boolean
+  onTaskClick?: (href: string) => void
 }) {
   const getIcon = () => {
     const iconClass = `w-5 h-5 ${isComplete ? 'text-green-600' : isInProgress ? 'text-blue-600' : 'text-gray-500'}`
@@ -175,59 +180,70 @@ function TaskCard({
       ? 'border-blue-200 bg-blue-50/50' 
       : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
 
-  return (
-    <Link href={requirement.href}>
-      <div className={`group relative rounded-xl border p-4 transition-all duration-200 ${statusStyles}`}>
-        <div className="flex items-start gap-4">
-          {/* Icon */}
-          <div className={`flex-shrink-0 p-2 rounded-lg ${
-            isComplete ? 'bg-green-100' : isInProgress ? 'bg-blue-100' : 'bg-gray-100 group-hover:bg-gray-200'
-          }`}>
-            {getIcon()}
-          </div>
-          
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className={`font-medium ${isComplete ? 'text-gray-500' : 'text-gray-900'}`}>
-                {requirement.title}
-              </h3>
-              {state && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                  {state.code}
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{requirement.description}</p>
-            
-            {/* Bottom row */}
-            <div className="flex items-center gap-3 mt-2">
-              {requirement.estimatedTime && !isComplete && (
-                <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                  <Clock className="w-3 h-3" />
-                  {requirement.estimatedTime}
-                </span>
-              )}
-              {state?.law && (
-                <span className="text-xs text-gray-500">
-                  {state.law}
-                </span>
-              )}
-            </div>
-          </div>
+  const handleClick = () => {
+    if (onTaskClick) {
+      onTaskClick(requirement.href)
+    }
+  }
 
-          {/* Status / Arrow */}
-          <div className="flex-shrink-0">
-            {isComplete ? (
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
-            ) : (
-              <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-gray-700 group-hover:translate-x-0.5 transition-all" />
+  const content = (
+    <div className={`group relative rounded-xl border p-4 transition-all duration-200 cursor-pointer ${statusStyles}`}>
+      <div className="flex items-start gap-4">
+        {/* Icon */}
+        <div className={`flex-shrink-0 p-2 rounded-lg ${
+          isComplete ? 'bg-green-100' : isInProgress ? 'bg-blue-100' : 'bg-gray-100 group-hover:bg-gray-200'
+        }`}>
+          {getIcon()}
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className={`font-medium ${isComplete ? 'text-gray-500' : 'text-gray-900'}`}>
+              {requirement.title}
+            </h3>
+            {state && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                {state.code}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{requirement.description}</p>
+          
+          {/* Bottom row */}
+          <div className="flex items-center gap-3 mt-2">
+            {requirement.estimatedTime && !isComplete && (
+              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                <Clock className="w-3 h-3" />
+                {requirement.estimatedTime}
+              </span>
+            )}
+            {state?.law && (
+              <span className="text-xs text-gray-500">
+                {state.law}
+              </span>
             )}
           </div>
         </div>
+
+        {/* Status / Arrow */}
+        <div className="flex-shrink-0">
+          {isComplete ? (
+            <CheckCircle2 className="w-6 h-6 text-green-600" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-gray-700 group-hover:translate-x-0.5 transition-all" />
+          )}
+        </div>
       </div>
-    </Link>
+    </div>
   )
+
+  // If there's an onTaskClick handler, use it instead of Link
+  if (onTaskClick) {
+    return <div onClick={handleClick}>{content}</div>
+  }
+
+  return <Link href={requirement.href}>{content}</Link>
 }
 
 // ============================================================
@@ -276,6 +292,7 @@ function StatCard({
 // MAIN DASHBOARD COMPONENT
 // ============================================================
 export default function DashboardPage() {
+  const router = useRouter()
   const [data, setData] = useState<{
     orgName: string
     states: string[]
@@ -287,9 +304,15 @@ export default function DashboardPage() {
     trainingComplete: number
     trainingTotal: number
     consentCount: number
+    subscriptionStatus: string | null
+    trialStartedAt: Date | null
+    documentsGenerated: number
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
+  const [paywallStatus, setPaywallStatus] = useState<PaywallStatus | null>(null)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -308,7 +331,7 @@ export default function DashboardPage() {
 
       // Parallel fetch all data
       const [orgRes, docsRes, disclosureRes, trainingCompleteRes, trainingTotalRes, auditsRes, consentsRes, hiringStatesRes, leadsRes] = await Promise.all([
-        supabase.from('organizations').select('name, states').eq('id', orgId).single(),
+        supabase.from('organizations').select('name, states, subscription_status, trial_started_at, documents_generated').eq('id', orgId).single(),
         supabase.from('documents').select('doc_type').eq('org_id', orgId),
         supabase.from('disclosure_pages').select('is_published').eq('organization_id', orgId).single(),
         supabase.from('training_assignments').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'completed'),
@@ -340,6 +363,9 @@ export default function DashboardPage() {
         trainingComplete: trainingCompleteRes.count || 0,
         trainingTotal: trainingTotalRes.count || 0,
         consentCount: consentsRes.count || 0,
+        subscriptionStatus: orgRes.data?.subscription_status || null,
+        trialStartedAt: orgRes.data?.trial_started_at ? new Date(orgRes.data.trial_started_at) : null,
+        documentsGenerated: orgRes.data?.documents_generated || 0,
       })
       setLoading(false)
     }
@@ -423,6 +449,28 @@ export default function DashboardPage() {
     }
   }, [data])
 
+  // Handle task click - check paywall
+  const handleTaskClick = (href: string) => {
+    if (!data) return
+    
+    const status = checkPaywallStatus({
+      trialStartedAt: data.trialStartedAt,
+      documentsGenerated: data.documentsGenerated,
+      subscriptionStatus: data.subscriptionStatus,
+    })
+    
+    // If subscribed, just navigate
+    if (status.isSubscribed) {
+      router.push(href)
+      return
+    }
+    
+    // Otherwise show paywall
+    setPaywallStatus(status)
+    setPendingNavigation(href)
+    setShowPaywall(true)
+  }
+
   // Show confetti when all complete
   useEffect(() => {
     if (dashboardState?.allComplete) {
@@ -452,6 +500,20 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
       {showConfetti && <Confetti />}
+      
+      {/* Paywall Modal */}
+      {showPaywall && paywallStatus && (
+        <PaywallModal
+          status={paywallStatus}
+          onClose={() => {
+            setShowPaywall(false)
+            setPendingNavigation(null)
+          }}
+          onUpgrade={() => {
+            router.push('/pricing')
+          }}
+        />
+      )}
       
       <div className="max-w-5xl mx-auto p-6 md:p-8">
         
@@ -672,6 +734,7 @@ export default function DashboardPage() {
                           requirement={req}
                           state={state}
                           isComplete={isComplete(req.id, req.docType)}
+                          onTaskClick={handleTaskClick}
                         />
                       ))}
                     </div>
