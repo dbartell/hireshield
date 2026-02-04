@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, company, states, tools, usages, riskScore } = await req.json()
+    const { email, company, states, tools, usages, employeeCount, riskScore } = await req.json()
 
     if (!email || !company) {
       return NextResponse.json({ error: 'Email and company required' }, { status: 400 })
@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
         quiz_tools: tools || [],
         quiz_usages: usages || [],
         quiz_risk_score: riskScore,
+        employee_count: employeeCount || null,
         plan: 'trial',
         trial_started_at: new Date().toISOString(),
         documents_generated: 0,

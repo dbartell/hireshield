@@ -9,15 +9,24 @@ import { createClient } from '@/lib/supabase/client'
 import { allStates, regulatedStates } from '@/data/states'
 import { aiHiringTools, usageTypes } from '@/data/tools'
 
-type Step = 'states' | 'tools' | 'usage' | 'email' | 'creating'
+type Step = 'states' | 'tools' | 'usage' | 'employees' | 'email' | 'creating'
 
 interface OnboardData {
   states: string[]
   tools: string[]
   usages: string[]
+  employeeCount: string
   email: string
   company: string
 }
+
+const employeeTiers = [
+  { id: '1-50', label: '1-50 employees', description: 'Small team' },
+  { id: '51-200', label: '51-200 employees', description: 'Growing company' },
+  { id: '201-500', label: '201-500 employees', description: 'Mid-size organization' },
+  { id: '501-1000', label: '501-1,000 employees', description: 'Large company' },
+  { id: '1000+', label: '1,000+ employees', description: 'Enterprise' },
+]
 
 // Calculate risk score from selections
 function calculateRiskScore(data: OnboardData): number {
@@ -53,6 +62,7 @@ export default function OnboardPage() {
     states: [],
     tools: [],
     usages: [],
+    employeeCount: '',
     email: '',
     company: ''
   })
@@ -140,6 +150,7 @@ export default function OnboardPage() {
             quiz_tools: data.tools,
             quiz_usages: data.usages,
             quiz_risk_score: riskScore,
+            employee_count: data.employeeCount,
           })
           .eq('id', currentUserId)
         
@@ -156,6 +167,7 @@ export default function OnboardPage() {
           states: data.states,
           tools: data.tools,
           usages: data.usages,
+          employeeCount: data.employeeCount,
           riskScore,
         }),
       })
@@ -202,8 +214,8 @@ export default function OnboardPage() {
     }
   }
 
-  const progress = ['states', 'tools', 'usage', 'email'].indexOf(step) + 1
-  const totalSteps = 4
+  const progress = ['states', 'tools', 'usage', 'employees', 'email'].indexOf(step) + 1
+  const totalSteps = 5
 
   // Use light mode only to avoid hydration mismatch
   return (
@@ -361,7 +373,7 @@ export default function OnboardPage() {
                   <ArrowLeft className="mr-2 w-4 h-4" /> Back
                 </Button>
                 <Button 
-                  onClick={() => goToStep('email')} 
+                  onClick={() => goToStep('employees')} 
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={data.usages.length === 0}
                 >
@@ -372,7 +384,49 @@ export default function OnboardPage() {
           </Card>
         )}
 
-        {/* Step 4: Email */}
+        {/* Step 4: Employees */}
+        {step === 'employees' && (
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardContent className="pt-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">How many employees?</h1>
+              <p className="text-gray-600 mb-6">
+                This helps us personalize your compliance plan and pricing.
+              </p>
+              
+              <div className="space-y-2 mb-6">
+                {employeeTiers.map(tier => (
+                  <button
+                    key={tier.id}
+                    onClick={() => setData(prev => ({ ...prev, employeeCount: tier.id }))}
+                    className={`w-full p-4 text-left rounded-lg border transition-all ${
+                      data.employeeCount === tier.id
+                        ? 'bg-blue-600 border-blue-500 text-white'
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`font-medium ${data.employeeCount === tier.id ? 'text-white' : 'text-gray-900'}`}>{tier.label}</div>
+                    <div className={`text-sm ${data.employeeCount === tier.id ? 'text-blue-100' : 'text-gray-500'}`}>{tier.description}</div>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => goToStep('usage')} className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                </Button>
+                <Button 
+                  onClick={() => goToStep('email')} 
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={!data.employeeCount}
+                >
+                  Continue <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 5: Email */}
         {step === 'email' && (
           <Card className="bg-white border-gray-200 shadow-sm">
             <CardContent className="pt-6">
