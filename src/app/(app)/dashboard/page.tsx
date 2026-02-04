@@ -536,21 +536,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
       {showConfetti && <Confetti />}
       
-      {/* Guest Mode Banner */}
-      {isGuest && (
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-          <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              <span className="font-medium">You're viewing a preview. Create an account to save your progress and generate documents.</span>
-            </div>
-            <Link href="/login" className="bg-white text-blue-600 px-4 py-1.5 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors">
-              Create Account
-            </Link>
-          </div>
-        </div>
-      )}
-      
       {/* Paywall Modal */}
       {showPaywall && paywallStatus && (
         <PaywallModal
