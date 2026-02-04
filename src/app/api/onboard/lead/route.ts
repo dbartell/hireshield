@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
         employee_count: employeeCount || null,
         risk_score: riskScore,
         source: 'onboard',
-        updated_at: new Date().toISOString(),
       }, {
         onConflict: 'email',
       })

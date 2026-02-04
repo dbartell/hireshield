@@ -18,38 +18,18 @@ export default function DeleteAccountPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        setError('Not authenticated')
+      const res = await fetch('/api/account/delete', {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to delete account')
         return
       }
 
-      // Delete user data (cascade should handle related records)
-      // Delete organization
-      await supabase.from('organizations').delete().eq('id', user.id)
-      
-      // Delete documents
-      await supabase.from('documents').delete().eq('org_id', user.id)
-      
-      // Delete consents
-      await supabase.from('consents').delete().eq('org_id', user.id)
-      
-      // Delete training assignments
-      await supabase.from('training_assignments').delete().eq('org_id', user.id)
-      
-      // Delete audits
-      await supabase.from('audits').delete().eq('org_id', user.id)
-      
-      // Delete hiring states and tools
-      await supabase.from('hiring_states').delete().eq('org_id', user.id)
-      await supabase.from('hiring_tools').delete().eq('org_id', user.id)
-      
-      // Delete disclosure pages
-      await supabase.from('disclosure_pages').delete().eq('organization_id', user.id)
-
-      // Sign out
+      // Sign out locally
+      const supabase = createClient()
       await supabase.auth.signOut()
       
       // Redirect to homepage
