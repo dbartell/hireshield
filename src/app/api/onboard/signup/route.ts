@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         email: email,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${req.nextUrl.origin}/dashboard?welcome=true`,
+          emailRedirectTo: `${req.nextUrl.origin}/auth/callback?redirect=/dashboard`,
         },
       })
 
