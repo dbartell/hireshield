@@ -291,9 +291,6 @@ function StatCard({
 // ============================================================
 // MAIN DASHBOARD COMPONENT
 // ============================================================
-// LocalStorage key for onboard data
-const ONBOARD_STORAGE_KEY = 'hireshield_onboard_data'
-
 export default function DashboardPage() {
   const router = useRouter()
   const [data, setData] = useState<{
@@ -312,7 +309,6 @@ export default function DashboardPage() {
     documentsGenerated: number
   } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isGuest, setIsGuest] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [paywallStatus, setPaywallStatus] = useState<PaywallStatus | null>(null)
@@ -324,31 +320,6 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        // Check for guest data in localStorage
-        const storedData = localStorage.getItem(ONBOARD_STORAGE_KEY)
-        if (storedData) {
-          try {
-            const onboardData = JSON.parse(storedData)
-            setIsGuest(true)
-            setData({
-              orgName: onboardData.company || 'Your Company',
-              states: onboardData.states || [],
-              completedDocTypes: [],
-              hasDisclosure: false,
-              hasTraining: false,
-              hasAudit: true,
-              riskScore: onboardData.riskScore || null,
-              trainingComplete: 0,
-              trainingTotal: 0,
-              consentCount: 0,
-              subscriptionStatus: null,
-              trialStartedAt: null,
-              documentsGenerated: 0,
-            })
-          } catch (e) {
-            // Invalid localStorage data
-          }
-        }
         setLoading(false)
         return
       }
@@ -482,22 +453,6 @@ export default function DashboardPage() {
   const handleTaskClick = (href: string) => {
     if (!data) return
     
-    // Guests always see paywall
-    if (isGuest) {
-      setPaywallStatus({
-        isSubscribed: false,
-        isTrialing: false,
-        trialExpired: false,
-        trialDaysLeft: 0,
-        limitReached: true,
-        documentsGenerated: 0,
-        documentLimit: 0,
-      })
-      setPendingNavigation(href)
-      setShowPaywall(true)
-      return
-    }
-    
     const status = checkPaywallStatus({
       trialStartedAt: data.trialStartedAt,
       documentsGenerated: data.documentsGenerated,
@@ -550,7 +505,6 @@ export default function DashboardPage() {
       {showPaywall && paywallStatus && (
         <PaywallModal
           status={paywallStatus}
-          isGuest={isGuest}
           onClose={() => {
             setShowPaywall(false)
             setPendingNavigation(null)
