@@ -110,7 +110,7 @@ function TaskCard({
   return (
     <div
       onClick={() => onTaskClick(requirement.href)}
-      className={`group flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
+      className={`group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all cursor-pointer ${
         isComplete 
           ? 'bg-green-50 border-green-200' 
           : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
@@ -128,13 +128,13 @@ function TaskCard({
         )}
       </div>
       
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={`font-medium ${isComplete ? 'text-green-700' : 'text-gray-900'}`}>
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`font-medium truncate ${isComplete ? 'text-green-700' : 'text-gray-900'}`}>
             {requirement.title}
           </span>
           {state && (
-            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full flex-shrink-0">
               {state.code}
             </span>
           )}
@@ -145,7 +145,7 @@ function TaskCard({
       </div>
       
       {requirement.estimatedTime && !isComplete && (
-        <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
           <Clock className="w-3 h-3" />
           {requirement.estimatedTime}
         </div>
@@ -331,7 +331,7 @@ export default function PreviewPage() {
   const { hasStates, stateRequirements, general, isComplete, totalReqs, completedReqs, progress, daysUntilDeadline, nextAction } = dashboardState
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 overflow-x-hidden">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -360,7 +360,7 @@ export default function PreviewPage() {
         />
       )}
       
-      <div className="max-w-5xl mx-auto p-6 md:p-8">
+      <div className="max-w-5xl mx-auto p-6 md:p-8 overflow-hidden">
         
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-2xl mb-8 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
