@@ -92,7 +92,10 @@ export async function POST(req: NextRequest) {
           })
         } else {
           // Get quiz data from leads table
-          const { data: lead } = await supabaseAdmin
+          console.log('=== SET-PASSWORD: Looking up lead ===')
+          console.log('Looking for lead with email:', email.toLowerCase())
+          
+          const { data: lead, error: leadError } = await supabaseAdmin
             .from('leads')
             .select('*')
             .eq('email', email.toLowerCase())
@@ -100,10 +103,17 @@ export async function POST(req: NextRequest) {
             .limit(1)
             .single()
 
+          console.log('Lead lookup result:', lead)
+          console.log('Lead lookup error:', leadError)
+
           // Also try to get quiz data from Stripe metadata as fallback
           const stripeQuizStates = customerMetadata?.quiz_states ? JSON.parse(customerMetadata.quiz_states) : null
           const stripeQuizTools = customerMetadata?.quiz_tools ? JSON.parse(customerMetadata.quiz_tools) : null
           const stripeQuizRiskScore = customerMetadata?.quiz_risk_score ? parseInt(customerMetadata.quiz_risk_score) : null
+
+          console.log('Stripe metadata quiz_states:', stripeQuizStates)
+          console.log('Stripe metadata quiz_tools:', stripeQuizTools)
+          console.log('Stripe metadata quiz_risk_score:', stripeQuizRiskScore)
 
           // Create user with password
           const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -122,21 +132,25 @@ export async function POST(req: NextRequest) {
           }
 
           userId = authData.user.id
+          console.log('Created user with ID:', userId)
 
           // Create organization with quiz data (prefer leads table, fallback to Stripe metadata)
+          const orgData = {
+            id: userId,
+            name: lead?.company_name || customer.name || 'My Company',
+            states: lead?.states || stripeQuizStates || [],
+            quiz_tools: lead?.tools || stripeQuizTools || [],
+            quiz_usages: lead?.usages || [],
+            quiz_risk_score: lead?.risk_score ?? stripeQuizRiskScore ?? null,
+            employee_count: lead?.employee_count || null,
+            subscription_status: 'active',
+          }
+          console.log('=== SET-PASSWORD: Creating organization ===')
+          console.log('Org data:', orgData)
+
           const { error: orgError } = await supabaseAdmin
             .from('organizations')
-            .insert({
-              id: userId,
-              name: lead?.company_name || customer.name || 'My Company',
-              states: lead?.states || stripeQuizStates || [],
-              quiz_tools: lead?.tools || stripeQuizTools || [],
-              quiz_usages: lead?.usages || [],
-              quiz_risk_score: lead?.risk_score ?? stripeQuizRiskScore ?? null,
-              employee_count: lead?.employee_count || null,
-              subscription_status: 'active',
-              documents_generated: 0,
-            })
+            .insert(orgData)
 
           if (orgError) {
             console.error('Create org error:', orgError)

@@ -11,16 +11,24 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, email, quizData } = await req.json()
 
+    console.log('=== BOOTSTRAP API ===')
+    console.log('User ID:', userId)
+    console.log('Email:', email)
+    console.log('Quiz data from localStorage:', quizData)
+
     if (!userId) {
+      console.log('No user ID provided')
       return NextResponse.json({ error: 'User ID required' }, { status: 400 })
     }
 
     // Check if organization already exists
-    const { data: existingOrg } = await supabaseAdmin
+    const { data: existingOrg, error: orgCheckError } = await supabaseAdmin
       .from('organizations')
       .select('id')
       .eq('id', userId)
       .single()
+
+    console.log('Existing org check:', existingOrg, 'Error:', orgCheckError)
 
     if (existingOrg) {
       // Org exists but might be missing data - update it if we have quiz data
@@ -78,23 +86,34 @@ export async function POST(req: NextRequest) {
     const riskScore = quizData?.riskScore ?? leadData?.risk_score ?? null
     const companyName = quizData?.company || leadData?.company_name || 'My Company'
 
+    console.log('=== BOOTSTRAP: Creating org ===')
+    console.log('States (final):', states)
+    console.log('Tools (final):', tools)
+    console.log('Risk Score (final):', riskScore)
+    console.log('Company Name (final):', companyName)
+
     // Create organization
+    const orgData = {
+      id: userId,
+      name: companyName,
+      states,
+      quiz_tools: tools,
+      quiz_risk_score: riskScore,
+      plan: 'trial',
+      trial_started_at: new Date().toISOString(),
+    }
+    console.log('Inserting org:', orgData)
+
     const { error: orgError } = await supabaseAdmin
       .from('organizations')
-      .insert({
-        id: userId,
-        name: companyName,
-        states,
-        quiz_tools: tools,
-        quiz_risk_score: riskScore,
-        plan: 'trial',
-        trial_started_at: new Date().toISOString(),
-      })
+      .insert(orgData)
 
     if (orgError) {
       console.error('Bootstrap org creation error:', orgError)
       return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 })
     }
+    
+    console.log('Org created successfully')
 
     // Also create user record if missing
     const { data: existingUser } = await supabaseAdmin

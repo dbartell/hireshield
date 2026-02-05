@@ -347,19 +347,24 @@ export default function DashboardPage() {
       
       if (!orgCheck) {
         // Org doesn't exist - try to bootstrap from localStorage quiz data
+        console.log('=== DASHBOARD: Org missing, attempting bootstrap ===')
         const storedQuizData = typeof window !== 'undefined' ? localStorage.getItem('hireshield_onboard_data') : null
+        console.log('localStorage hireshield_onboard_data:', storedQuizData)
+        
         let quizData = null
         if (storedQuizData) {
           try {
             quizData = JSON.parse(storedQuizData)
+            console.log('Parsed quiz data:', quizData)
           } catch (e) {
-            // ignore parse errors
+            console.error('Failed to parse quiz data:', e)
           }
         }
         
         // Call bootstrap API to create org
         try {
-          await fetch('/api/dashboard/bootstrap', {
+          console.log('Calling bootstrap API with:', { userId: orgId, email: userEmail, quizData })
+          const bootstrapRes = await fetch('/api/dashboard/bootstrap', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -368,9 +373,13 @@ export default function DashboardPage() {
               quizData,
             }),
           })
+          const bootstrapResult = await bootstrapRes.json()
+          console.log('Bootstrap result:', bootstrapResult)
         } catch (e) {
           console.error('Bootstrap failed:', e)
         }
+      } else {
+        console.log('Org exists, skipping bootstrap')
       }
 
       // Parallel fetch all data (re-fetch org after potential bootstrap)

@@ -11,29 +11,42 @@ export async function POST(req: NextRequest) {
   try {
     const { email, company, states, tools, usages, employeeCount, riskScore } = await req.json()
 
+    console.log('=== ONBOARD/LEAD API ===')
+    console.log('Email:', email)
+    console.log('Company:', company)
+    console.log('States:', states)
+    console.log('Tools:', tools)
+    console.log('Risk Score:', riskScore)
+
     if (!email || !company) {
+      console.log('Missing email or company')
       return NextResponse.json({ error: 'Email and company required' }, { status: 400 })
     }
 
     // Upsert lead - update if email exists, insert if new
+    const leadData = {
+      email: email.toLowerCase(),
+      company_name: company,
+      states: states || [],
+      tools: tools || [],
+      usages: usages || [],
+      employee_count: employeeCount || null,
+      risk_score: riskScore,
+      source: 'onboard',
+    }
+    console.log('Upserting lead:', leadData)
+
     const { error: leadError } = await supabaseAdmin
       .from('leads')
-      .upsert({
-        email: email.toLowerCase(),
-        company_name: company,
-        states: states || [],
-        tools: tools || [],
-        usages: usages || [],
-        employee_count: employeeCount || null,
-        risk_score: riskScore,
-        source: 'onboard',
-      }, {
+      .upsert(leadData, {
         onConflict: 'email',
       })
 
     if (leadError) {
       console.error('Lead upsert error:', leadError)
       // Don't fail - still let them continue
+    } else {
+      console.log('Lead upserted successfully')
     }
 
     // Track event
