@@ -86,7 +86,7 @@ const faqCategories = [
       },
       {
         q: "Is there a free trial?",
-        a: "Yes! All plans include a 14-day free trial. You can also take our free compliance scorecard to assess your risk level before signing up."
+        a: "Take our free compliance scorecard to assess your risk level. You'll see exactly what you need to fix before you pay anything."
       },
     ]
   },

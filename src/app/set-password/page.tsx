@@ -220,11 +220,7 @@ function SetPasswordForm() {
           ) : (
             'Create your password to access your account'
           )}
-          {isTrial && (
-            <span className="block mt-2 text-blue-600 font-medium">
-              Your 14-day free trial starts now!
-            </span>
-          )}
+          {/* Trial messaging removed - paid only */}
         </CardDescription>
       </CardHeader>
       <CardContent>
