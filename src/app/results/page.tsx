@@ -130,7 +130,7 @@ function TaskCard({
       
       <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`font-medium truncate ${isComplete ? 'text-green-700' : 'text-gray-900'}`}>
+          <span className={`font-medium ${isComplete ? 'text-green-700' : 'text-gray-900'}`}>
             {requirement.title}
           </span>
           {state && (
@@ -139,7 +139,7 @@ function TaskCard({
             </span>
           )}
         </div>
-        <p className={`text-sm truncate ${isComplete ? 'text-green-600' : 'text-gray-500'}`}>
+        <p className={`text-sm ${isComplete ? 'text-green-600' : 'text-gray-500'}`}>
           {requirement.description}
         </p>
       </div>
