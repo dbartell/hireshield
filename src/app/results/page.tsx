@@ -142,6 +142,11 @@ function TaskCard({
         <p className={`text-sm ${isComplete ? 'text-green-600' : 'text-gray-500'}`}>
           {requirement.description}
         </p>
+        {state?.law && (
+          <p className="text-xs text-gray-400 mt-1">
+            {state.law}
+          </p>
+        )}
       </div>
       
       {requirement.estimatedTime && !isComplete && (
