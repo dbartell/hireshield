@@ -342,6 +342,14 @@ export default function DashboardPage() {
         userEmail ? supabase.from('leads').select('risk_score, states, tools').eq('email', userEmail).order('created_at', { ascending: false }).limit(1) : Promise.resolve({ data: null }),
       ])
 
+      // DEBUG LOGGING - remove after troubleshooting
+      console.log('=== DASHBOARD DEBUG ===')
+      console.log('User ID:', orgId)
+      console.log('User Email:', userEmail)
+      console.log('Org Response:', orgRes.data)
+      console.log('Leads Response:', leadsRes.data)
+      console.log('Hiring States Response:', hiringStatesRes.data)
+      
       // Get risk score from most recent audit, or fall back to leads table (scorecard)
       const auditRiskScore = auditsRes.data?.[0]?.risk_score ?? null
       const leadRiskScore = leadsRes.data?.[0]?.risk_score ?? null
@@ -352,6 +360,12 @@ export default function DashboardPage() {
       const hiringStates = hiringStatesRes.data?.map(s => s.state_code) || []
       const leadStates = leadsRes.data?.[0]?.states || []
       const states = orgStates.length > 0 ? orgStates : (hiringStates.length > 0 ? hiringStates : leadStates)
+
+      console.log('Org States:', orgStates)
+      console.log('Hiring States:', hiringStates)
+      console.log('Lead States:', leadStates)
+      console.log('Final States:', states)
+      console.log('=== END DEBUG ===')
 
       setData({
         orgName: orgRes.data?.name || 'Your Company',
