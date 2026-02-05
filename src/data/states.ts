@@ -69,6 +69,7 @@ export const allStates = [
   { code: "CO", name: "Colorado" },
   { code: "CT", name: "Connecticut" },
   { code: "DE", name: "Delaware" },
+  { code: "DC", name: "Washington D.C." },
   { code: "FL", name: "Florida" },
   { code: "GA", name: "Georgia" },
   { code: "HI", name: "Hawaii" },
@@ -93,6 +94,7 @@ export const allStates = [
   { code: "NJ", name: "New Jersey" },
   { code: "NM", name: "New Mexico" },
   { code: "NY", name: "New York" },
+  { code: "NYC", name: "New York City" },
   { code: "NC", name: "North Carolina" },
   { code: "ND", name: "North Dakota" },
   { code: "OH", name: "Ohio" },
@@ -111,8 +113,6 @@ export const allStates = [
   { code: "WV", name: "West Virginia" },
   { code: "WI", name: "Wisconsin" },
   { code: "WY", name: "Wyoming" },
-  { code: "DC", name: "Washington D.C." },
-  { code: "NYC", name: "New York City" }
 ]
 
 export const regulatedStates = ["IL", "CO", "CA", "NYC"]

@@ -241,71 +241,10 @@ export default function HomePage() {
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-600">
-              Start with training or get ongoing compliance. No hidden fees.
+              Plans for every company size. No hidden fees.
             </p>
           </div>
           
-          {/* One-time options */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
-            <Card>
-              <CardHeader>
-                <CardTitle>Compliance Training</CardTitle>
-                <CardDescription>One-time purchase</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$299</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    HR training course + certificate
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    "Are we compliant?" assessment
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    AI tool classification guide
-                  </li>
-                </ul>
-                <Link href="/pricing">
-                  <Button className="w-full mt-6" variant="outline">Get Training</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Audit + Docs Package</CardTitle>
-                <CardDescription>One-time purchase</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$999</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Everything in Training
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Full AI tool audit
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Impact assessment + all templates
-                  </li>
-                </ul>
-                <Link href="/pricing">
-                  <Button className="w-full mt-6" variant="outline">Get Audit Package</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Monthly plans */}
           <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <Card>

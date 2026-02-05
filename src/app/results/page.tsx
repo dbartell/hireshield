@@ -236,12 +236,12 @@ export default function PreviewPage() {
           })
         } catch (e) {
           // Invalid data, redirect to onboard
-          router.push('/onboard')
+          router.push('/quiz')
           return
         }
       } else {
         // No data, redirect to onboard
-        router.push('/onboard')
+        router.push('/quiz')
         return
       }
       setLoading(false)
@@ -406,6 +406,13 @@ export default function PreviewPage() {
         {hasStates && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <StatCard 
+              icon={AlertCircle} 
+              label="Risk Score" 
+              value={data.riskScore !== null ? data.riskScore : '—'}
+              subtext={data.riskScore !== null ? (data.riskScore > 50 ? 'High risk' : data.riskScore > 25 ? 'Medium risk' : 'Low risk') : 'Not assessed'}
+              color={data.riskScore !== null ? (data.riskScore > 50 ? 'red' : data.riskScore > 25 ? 'amber' : 'green') : 'blue'}
+            />
+            <StatCard 
               icon={FileCheck} 
               label="Tasks Complete" 
               value={`${completedReqs}/${totalReqs}`}
@@ -424,13 +431,6 @@ export default function PreviewPage() {
               value={0}
               subtext="This month"
               color="green"
-            />
-            <StatCard 
-              icon={AlertCircle} 
-              label="Risk Score" 
-              value={data.riskScore !== null ? data.riskScore : '—'}
-              subtext={data.riskScore !== null ? (data.riskScore > 50 ? 'High risk' : data.riskScore > 25 ? 'Medium risk' : 'Low risk') : 'Not assessed'}
-              color={data.riskScore !== null ? (data.riskScore > 50 ? 'red' : data.riskScore > 25 ? 'amber' : 'green') : 'blue'}
             />
           </div>
         )}

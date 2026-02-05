@@ -221,7 +221,7 @@ export default function OnboardPage() {
       setStep('creating')
       
       setTimeout(() => {
-        router.push('/preview')
+        router.push('/results')
       }, 1500)
     } catch (err) {
       setError('Something went wrong. Please try again.')

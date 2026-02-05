@@ -110,7 +110,7 @@ export default function MarketingLayout({
               <Link href="/login">
                 <Button variant="ghost">Log in</Button>
               </Link>
-              <Link href="/onboard">
+              <Link href="/quiz">
                 <Button variant="cta">Free Compliance Score</Button>
               </Link>
             </div>
@@ -131,7 +131,7 @@ export default function MarketingLayout({
               <h3 className="text-white font-semibold mb-4">Product</h3>
               <ul className="space-y-2">
                 <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
-                <li><Link href="/onboard" className="hover:text-white">Free Assessment</Link></li>
+                <li><Link href="/quiz" className="hover:text-white">Free Assessment</Link></li>
                 <li><Link href="/demo" className="hover:text-white">Request Demo</Link></li>
               </ul>
             </div>
