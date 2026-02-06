@@ -14,6 +14,9 @@ import {
   generateDisclosureContent,
   saveDisclosurePage
 } from "@/lib/actions/disclosure"
+import { TaskHeader } from "@/components/task-header"
+import { TaskCompletionModal } from "@/components/task-completion-modal"
+import { useNextTask } from "@/hooks/use-next-task"
 
 interface DisclosurePage {
   id: string
@@ -39,6 +42,8 @@ export default function DisclosuresPage() {
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showEmbed, setShowEmbed] = useState(false)
+  const [showCompletion, setShowCompletion] = useState(false)
+  const { nextTask } = useNextTask('disclosure-page')
 
   useEffect(() => {
     loadPage()
@@ -53,10 +58,15 @@ export default function DisclosuresPage() {
 
   const handleTogglePublish = async () => {
     if (!page) return
+    const wasPublished = page.is_published
     setPublishing(true)
     await togglePublishDisclosurePage(!page.is_published)
     await loadPage()
     setPublishing(false)
+    // Show completion modal when publishing (not unpublishing)
+    if (!wasPublished) {
+      setShowCompletion(true)
+    }
   }
 
   const handleGenerate = async () => {
@@ -184,12 +194,24 @@ export default function DisclosuresPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Public Disclosure Page</h1>
-        <p className="text-gray-600 mt-1">Share how your organization uses AI in hiring</p>
-      </div>
+    <>
+      {/* Completion Modal */}
+      <TaskCompletionModal
+        isOpen={showCompletion}
+        onClose={() => setShowCompletion(false)}
+        title="Public Disclosure Page Published"
+        description="Your AI hiring disclosure is now live and visible to candidates."
+        nextTask={nextTask || undefined}
+      />
+
+      <TaskHeader
+        title="Public Disclosure Page"
+        description="Share how your organization uses AI in hiring"
+        estimatedTime="~5 min"
+        isComplete={page.is_published}
+      />
+
+      <div className="p-6 md:p-8 max-w-3xl mx-auto">
 
       {/* Status Card */}
       <Card className={page.is_published ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}>
@@ -439,6 +461,7 @@ export default function DisclosuresPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

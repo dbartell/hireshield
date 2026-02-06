@@ -10,6 +10,7 @@ import {
   ArrowRight, Loader2, GraduationCap, Download, Mail, X, Plus, Trash2
 } from "lucide-react"
 import { getTrackData, TRACK_LABELS, type TrainingTrack } from "@/lib/training-data"
+import { TaskHeader } from "@/components/task-header"
 
 interface Assignment {
   id: string
@@ -137,11 +138,13 @@ export default function TrainingPage() {
   // No assignments - show path selection
   if (assignments.length === 0 && !showTeamForm) {
     return (
-      <div className="p-6 md:p-8 max-w-3xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Team Training</h1>
-          <p className="text-gray-600 mt-1">AI Hiring Compliance Certification</p>
-        </div>
+      <>
+        <TaskHeader
+          title="Team Training"
+          description="AI Hiring Compliance Certification"
+          estimatedTime="~15 min each"
+        />
+        <div className="p-6 md:p-8 max-w-3xl mx-auto">
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -249,7 +252,8 @@ export default function TrainingPage() {
             <li>✓ Certificate of completion (1 year validity)</li>
           </ul>
         </div>
-      </div>
+        </div>
+      </>
     )
   }
 
