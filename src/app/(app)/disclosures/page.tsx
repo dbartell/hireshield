@@ -61,16 +61,31 @@ export default function DisclosuresPage() {
 
   const handleGenerate = async () => {
     setGenerating(true)
-    const generated = await generateDisclosureContent()
-    if (!('error' in generated)) {
+    try {
+      const generated = await generateDisclosureContent()
+      if ('error' in generated) {
+        console.error('Generate error:', generated.error)
+        alert('Failed to generate content. Please try again.')
+        setGenerating(false)
+        return
+      }
+      
+      // Ensure we have required fields
+      if (!generated.slug || !generated.contact_email) {
+        console.error('Missing required fields:', { slug: generated.slug, email: generated.contact_email })
+        alert('Could not generate page. Please create manually.')
+        setGenerating(false)
+        return
+      }
+      
       // Save the generated content
-      await saveDisclosurePage({
-        slug: generated.slug || '',
+      const saveResult = await saveDisclosurePage({
+        slug: generated.slug,
         logo_url: '',
         brand_color: '#3B82F6',
         header_text: generated.header_text || '',
         intro_text: generated.intro_text || '',
-        contact_email: generated.contact_email || '',
+        contact_email: generated.contact_email,
         rights_section_enabled: true,
         rights_custom_text: generated.rights_custom_text || '',
         bias_audit_section_enabled: false,
@@ -80,7 +95,18 @@ export default function DisclosuresPage() {
         custom_tools: generated.custom_tools || [],
         use_audit_tools: true
       })
+      
+      if (saveResult.error) {
+        console.error('Save error:', saveResult.error)
+        alert('Failed to save page: ' + saveResult.error)
+        setGenerating(false)
+        return
+      }
+      
       await loadPage()
+    } catch (err) {
+      console.error('Generate failed:', err)
+      alert('Something went wrong. Please try again.')
     }
     setGenerating(false)
   }

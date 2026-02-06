@@ -115,33 +115,10 @@ function SetPasswordForm() {
         return
       }
 
-      // New user from guest checkout - sign them in
-      if (data.newUser && userEmail) {
-        const supabase = createClient()
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: userEmail,
-          password,
-        })
-        
-        if (signInError) {
-          console.error('Auto sign-in failed:', signInError)
-          setTimeout(() => {
-            router.push('/login?email=' + encodeURIComponent(userEmail) + '&message=Account created! Please sign in.')
-          }, 1500)
-          return
-        }
-        
-        setSuccess(true)
-        setTimeout(() => {
-          router.push('/dashboard?welcome=true')
-        }, 1500)
-        return
-      }
-
+      // Always try to auto sign-in after password is set
       setSuccess(true)
       
-      // For trial users, sign them in and go to dashboard
-      if (isTrial && userEmail) {
+      if (userEmail) {
         const supabase = createClient()
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: userEmail,
@@ -162,7 +139,7 @@ function SetPasswordForm() {
           router.push('/dashboard?welcome=true')
         }, 1500)
       } else {
-        // Non-trial flow - redirect to login
+        // No email available - redirect to login
         setTimeout(() => {
           router.push('/login?message=Password set! Please sign in.')
         }, 2000)

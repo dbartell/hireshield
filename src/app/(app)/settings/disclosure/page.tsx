@@ -218,16 +218,14 @@ export default function DisclosureSettingsPage() {
             <p className="text-gray-600">Create a public page explaining your AI hiring practices</p>
           </div>
           <div className="flex items-center gap-3">
-            {!page && (
-              <Button onClick={handleGenerate} disabled={generating} variant="outline">
-                {generating ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-2" />
-                )}
-                Auto-Generate
-              </Button>
-            )}
+            <Button onClick={handleGenerate} disabled={generating} variant="outline">
+              {generating ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {page ? 'Re-generate' : 'Auto-Generate'}
+            </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -781,9 +779,45 @@ export default function DisclosureSettingsPage() {
                             <CheckCircle className="w-4 h-4" style={{ color: formData.brand_color }} />
                             <span className="font-medium text-gray-900 text-xs">Your Rights</span>
                           </div>
+                          <div className="p-2 bg-gray-50 rounded text-xs text-gray-700 space-y-1">
+                            {formData.rights_custom_text ? (
+                              formData.rights_custom_text.split('\n').slice(0, 3).map((line, i) => {
+                                const trimmed = line.trim()
+                                if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+                                  return (
+                                    <div key={i} className="flex items-start gap-1">
+                                      <span 
+                                        className="inline-block w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0"
+                                        style={{ backgroundColor: formData.brand_color }}
+                                      />
+                                      <span>{trimmed.substring(1).trim().substring(0, 40)}...</span>
+                                    </div>
+                                  )
+                                }
+                                return trimmed ? <div key={i}>{trimmed.substring(0, 50)}...</div> : null
+                              })
+                            ) : (
+                              <span>Candidate rights will appear here...</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.bias_audit_section_enabled && (
+                        <div>
+                          <div className="flex items-center gap-1 mb-2">
+                            <FileText className="w-4 h-4" style={{ color: formData.brand_color }} />
+                            <span className="font-medium text-gray-900 text-xs">Bias Audit (NYC LL144)</span>
+                          </div>
                           <div className="p-2 bg-gray-50 rounded text-xs text-gray-700">
-                            {formData.rights_custom_text?.substring(0, 100) || 'Candidate rights will appear here...'}
-                            {(formData.rights_custom_text?.length || 0) > 100 ? '...' : ''}
+                            {formData.bias_audit_date || formData.bias_audit_auditor ? (
+                              <span>
+                                Audit {formData.bias_audit_date && `on ${formData.bias_audit_date}`}
+                                {formData.bias_audit_auditor && ` by ${formData.bias_audit_auditor}`}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">No audit info added yet</span>
+                            )}
                           </div>
                         </div>
                       )}

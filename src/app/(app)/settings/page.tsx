@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Building2, Mail, Users, Shield, ChevronRight } from "lucide-react"
+import { Building2, Mail, Users, Shield, ChevronRight, Phone } from "lucide-react"
 import Link from "next/link"
 
 export default async function SettingsPage() {
@@ -110,6 +110,39 @@ export default async function SettingsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Account ID</label>
                   <div className="text-sm text-gray-500 font-mono">{user?.id}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="w-5 h-5" />
+                Contact Settings
+              </CardTitle>
+              <CardDescription>HR contact information for templates and notifications</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">HR Email</label>
+                  <div className="text-lg">{org?.hr_email || user?.email || 'Not set'}</div>
+                  <p className="text-xs text-gray-500 mt-1">Used in candidate disclosure and consent templates</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Candidate Inquiries Email</label>
+                  <div className="text-lg">{org?.candidate_email || org?.hr_email || 'Not set'}</div>
+                  <p className="text-xs text-gray-500 mt-1">Where candidates can reach out about AI hiring</p>
+                </div>
+                <div className="pt-2">
+                  <Link href="/settings/contact">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      Edit Contact Settings
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>

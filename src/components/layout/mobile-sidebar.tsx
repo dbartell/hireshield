@@ -20,7 +20,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/audit", label: "Audit", icon: ClipboardCheck },
+  { href: "/audit", label: "Assessment", icon: ClipboardCheck },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/disclosures", label: "Disclosures", icon: Globe },
   { href: "/training", label: "Training", icon: GraduationCap },

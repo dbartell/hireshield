@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, company, states, tools, usages, employeeCount, riskScore } = await req.json()
+    const { email, company, states, tools, usages, employeeCount, industry, riskScore } = await req.json()
 
     console.log('=== ONBOARD/LEAD API ===')
     console.log('Email:', email)
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       tools: tools || [],
       usages: usages || [],
       employee_count: employeeCount || null,
+      industry: industry || null,
       risk_score: riskScore,
       source: 'onboard',
     }

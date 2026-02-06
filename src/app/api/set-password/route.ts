@@ -143,6 +143,8 @@ export async function POST(req: NextRequest) {
             quiz_usages: lead?.usages || [],
             quiz_risk_score: lead?.risk_score ?? stripeQuizRiskScore ?? null,
             employee_count: lead?.employee_count || null,
+            industry: lead?.industry || null,
+            size: lead?.employee_count || null, // Also save as 'size' for settings display
             subscription_status: 'active',
           }
           console.log('=== SET-PASSWORD: Creating organization ===')

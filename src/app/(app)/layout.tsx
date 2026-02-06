@@ -29,7 +29,7 @@ export default async function AppLayout({
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/audit', icon: ClipboardCheck, label: 'Audit' },
+    { href: '/audit', icon: ClipboardCheck, label: 'Assessment' },
     { href: '/documents', icon: FileText, label: 'Documents' },
     { href: '/disclosures', icon: Globe, label: 'Disclosures' },
     { href: '/training', icon: GraduationCap, label: 'Training' },

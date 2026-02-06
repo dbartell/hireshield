@@ -32,13 +32,13 @@ export async function POST(req: NextRequest) {
 
     if (existingOrg) {
       // Org exists but might be missing data - update it if we have quiz data
-      if (quizData?.states?.length > 0 || quizData?.riskScore) {
+      if (quizData?.states?.length > 0 || quizData?.riskScore || quizData?.industry || quizData?.employeeCount) {
         const updates: Record<string, unknown> = {}
         
         // Only update fields that are empty/null
         const { data: currentOrg } = await supabaseAdmin
           .from('organizations')
-          .select('states, quiz_risk_score')
+          .select('states, quiz_risk_score, industry, size')
           .eq('id', userId)
           .single()
         
@@ -53,6 +53,14 @@ export async function POST(req: NextRequest) {
         }
         if (quizData?.company) {
           updates.name = quizData.company
+        }
+        // Sync industry and size if missing
+        if (!currentOrg?.industry && quizData?.industry) {
+          updates.industry = quizData.industry
+        }
+        if (!currentOrg?.size && quizData?.employeeCount) {
+          updates.size = quizData.employeeCount
+          updates.employee_count = quizData.employeeCount
         }
         
         if (Object.keys(updates).length > 0) {
@@ -104,6 +112,8 @@ export async function POST(req: NextRequest) {
     const tools = quizData?.tools?.length > 0 ? quizData.tools : (leadData?.tools || [])
     const riskScore = quizData?.riskScore ?? leadData?.risk_score ?? null
     const companyName = quizData?.company || leadData?.company_name || 'My Company'
+    const industry = quizData?.industry || leadData?.industry || null
+    const employeeCount = quizData?.employeeCount || leadData?.employee_count || null
 
     console.log('=== BOOTSTRAP: Creating org ===')
     console.log('States (final):', states)
@@ -118,6 +128,9 @@ export async function POST(req: NextRequest) {
       states,
       quiz_tools: tools,
       quiz_risk_score: riskScore,
+      industry,
+      size: employeeCount,
+      employee_count: employeeCount,
       plan: 'trial',
       subscription_status: 'trialing', // Allows access during trial
       trial_started_at: new Date().toISOString(),
