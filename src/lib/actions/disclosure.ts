@@ -48,28 +48,33 @@ export async function generateDisclosureContent() {
 
   const orgId = user.id
 
-  // Get organization info
+  // Get organization info including quiz_tools and states
   const { data: org } = await supabase
     .from('organizations')
-    .select('name')
+    .select('name, quiz_tools, states')
     .eq('id', orgId)
     .single()
 
-  // Get hiring tools from audit
-  const { data: tools } = await supabase
+  // Get hiring tools from audit (if any)
+  const { data: auditTools } = await supabase
     .from('hiring_tools')
     .select('*')
     .eq('org_id', orgId)
 
-  // Get hiring states
-  const { data: states } = await supabase
+  // Get hiring states from hiring_states table (fallback)
+  const { data: hiringStates } = await supabase
     .from('hiring_states')
     .select('state_code')
     .eq('org_id', orgId)
 
   const companyName = org?.name || 'Your Company'
-  const stateCodes = states?.map(s => s.state_code) || []
-  const regulatedStateCodes = stateCodes.filter(s => regulatedStates.includes(s))
+  
+  // Use org.states first, fall back to hiring_states table
+  const orgStates = org?.states || []
+  const stateCodes = orgStates.length > 0 
+    ? orgStates 
+    : (hiringStates?.map(s => s.state_code) || [])
+  const regulatedStateCodes = stateCodes.filter((s: string) => regulatedStates.includes(s))
 
   // Generate intro text
   let introText = `At ${companyName}, we are committed to transparent and fair hiring practices. `
@@ -77,7 +82,7 @@ export async function generateDisclosureContent() {
   
   if (regulatedStateCodes.length > 0) {
     introText += `\n\nThis disclosure is provided in accordance with requirements in `
-    introText += regulatedStateCodes.map(code => {
+    introText += regulatedStateCodes.map((code: string) => {
       const state = stateRequirements.find(s => s.code === code)
       return state ? `${state.name} (${state.law})` : code
     }).join(', ')
@@ -89,7 +94,7 @@ export async function generateDisclosureContent() {
   
   const allRights = new Set<string>()
   
-  regulatedStateCodes.forEach(code => {
+  regulatedStateCodes.forEach((code: string) => {
     const state = stateRequirements.find(s => s.code === code)
     if (state) {
       state.requirements.forEach(req => {
@@ -115,11 +120,20 @@ export async function generateDisclosureContent() {
   })
 
   // Map tools to custom tools format
-  const customTools = (tools || []).map(tool => {
-    const toolInfo = aiHiringTools.find(t => t.id === tool.tool_name)
+  // First try audit tools, then fall back to quiz_tools from organization
+  let toolsList: string[] = []
+  
+  if (auditTools && auditTools.length > 0) {
+    toolsList = auditTools.map(t => t.tool_name)
+  } else if (org?.quiz_tools && org.quiz_tools.length > 0) {
+    toolsList = org.quiz_tools
+  }
+  
+  const customTools = toolsList.map(toolId => {
+    const toolInfo = aiHiringTools.find(t => t.id === toolId)
     return {
-      name: toolInfo?.name || tool.tool_name,
-      purpose: toolInfo?.description || tool.usage_description || 'Employment decision support',
+      name: toolInfo?.name || toolId,
+      purpose: toolInfo?.description || 'Employment decision support',
       evaluates: toolInfo?.commonUses?.join(', ') || 'Various employment factors',
       stages: 'Multiple stages'
     }
@@ -265,6 +279,7 @@ export async function getDisclosureBySlug(slug: string) {
   let tools = page.custom_tools || []
   
   if (page.use_audit_tools && page.organization_id) {
+    // First try hiring_tools table
     const { data: hiringTools } = await supabase
       .from('hiring_tools')
       .select('*')
@@ -281,6 +296,26 @@ export async function getDisclosureBySlug(slug: string) {
         }
       })
       tools = [...auditTools, ...tools]
+    } else {
+      // Fall back to quiz_tools from organization
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('quiz_tools')
+        .eq('id', page.organization_id)
+        .single()
+      
+      if (org?.quiz_tools && org.quiz_tools.length > 0) {
+        const quizTools = org.quiz_tools.map((toolId: string) => {
+          const toolInfo = aiHiringTools.find(t => t.id === toolId)
+          return {
+            name: toolInfo?.name || toolId,
+            purpose: toolInfo?.description || 'Employment decision support',
+            evaluates: toolInfo?.commonUses?.join(', ') || 'Various employment factors',
+            stages: 'Multiple stages'
+          }
+        })
+        tools = [...quizTools, ...tools]
+      }
     }
   }
 
