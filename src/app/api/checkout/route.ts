@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       success_url: `${req.nextUrl.origin}/dashboard?checkout=success`,
-      cancel_url: `${req.nextUrl.origin}/pricing?checkout=cancelled`,
+      cancel_url: `${req.nextUrl.origin}/quiz?checkout=cancelled`,
       subscription_data: {
         metadata: {
           supabase_user_id: user.id,

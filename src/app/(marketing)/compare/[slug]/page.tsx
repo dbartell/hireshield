@@ -428,7 +428,7 @@ export default async function ComparisonPage({ params }: Props) {
                 Get Free Compliance Score <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
-            <Link href="/pricing">
+            <Link href="/quiz">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-700">
                 View Pricing
               </Button>

@@ -100,9 +100,6 @@ export default function MarketingLayout({
             
             <div className="hidden md:flex items-center gap-8">
               <Dropdown label="State Laws" items={stateLaws} type="simple" />
-              <Link href="/pricing" className="text-gray-600 hover:text-gray-900">
-                Pricing
-              </Link>
               <Dropdown label="Resources" items={resources} type="detailed" />
             </div>
 
@@ -130,7 +127,6 @@ export default function MarketingLayout({
             <div>
               <h3 className="text-white font-semibold mb-4">Product</h3>
               <ul className="space-y-2">
-                <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
                 <li><Link href="/quiz" className="hover:text-white">Free Assessment</Link></li>
                 <li><Link href="/demo" className="hover:text-white">Request Demo</Link></li>
               </ul>

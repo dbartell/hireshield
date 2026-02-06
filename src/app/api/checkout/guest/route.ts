@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       success_url: `${req.nextUrl.origin}/set-password?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.nextUrl.origin}/pricing?checkout=cancelled`,
+      cancel_url: `${req.nextUrl.origin}/quiz?checkout=cancelled`,
       allow_promotion_codes: true,
       metadata: {
         source: 'guest_checkout',

@@ -271,7 +271,7 @@ export default function HomePage() {
                     Document generator
                   </li>
                 </ul>
-                <Link href="/pricing">
+                <Link href="/quiz">
                   <Button className="w-full mt-6" variant="outline">Get Started</Button>
                 </Link>
               </CardContent>
@@ -304,7 +304,7 @@ export default function HomePage() {
                     Multi-state coverage
                   </li>
                 </ul>
-                <Link href="/pricing">
+                <Link href="/quiz">
                   <Button className="w-full mt-6" variant="cta">Get Started</Button>
                 </Link>
               </CardContent>
@@ -334,7 +334,7 @@ export default function HomePage() {
                     Dedicated CSM
                   </li>
                 </ul>
-                <Link href="/pricing">
+                <Link href="/quiz">
                   <Button className="w-full mt-6" variant="outline">Get Started</Button>
                 </Link>
               </CardContent>
@@ -364,14 +364,14 @@ export default function HomePage() {
                     Dedicated team
                   </li>
                 </ul>
-                <Link href="/pricing">
+                <Link href="/quiz">
                   <Button className="w-full mt-6" variant="outline">Contact Sales</Button>
                 </Link>
               </CardContent>
             </Card>
           </div>
           <p className="text-center text-gray-600 mt-8">
-            <Link href="/pricing" className="text-blue-600 hover:underline">View full pricing details →</Link>
+            <Link href="/quiz" className="text-blue-600 hover:underline">Get your personalized quote →</Link>
           </p>
         </div>
       </section>

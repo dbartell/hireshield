@@ -551,7 +551,7 @@ export default function DashboardPage() {
             setPendingNavigation(null)
           }}
           onUpgrade={() => {
-            router.push('/pricing')
+            router.push('/quiz')
           }}
         />
       )}

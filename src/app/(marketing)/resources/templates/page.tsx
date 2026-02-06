@@ -136,7 +136,7 @@ export default function TemplatesPage() {
                   </div>
                   <CardTitle className="text-lg">{template.title}</CardTitle>
                   <CardDescription className="mb-4">{template.description}</CardDescription>
-                  <Link href="/pricing">
+                  <Link href="/quiz">
                     <Button className="w-full">
                       Upgrade to Access
                     </Button>

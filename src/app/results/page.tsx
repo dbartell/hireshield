@@ -361,7 +361,7 @@ export default function PreviewPage() {
           status={paywallStatus}
           isGuest={true}
           onClose={() => setShowPaywall(false)}
-          onUpgrade={() => router.push('/pricing')}
+          onUpgrade={() => router.push('/quiz')}
         />
       )}
       
