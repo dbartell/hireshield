@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, UserCheck, Settings, Globe, Trash2 } from "lucide-react"
+import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, UserCheck, Settings, Globe, Trash2, FolderCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { MobileSidebar } from "@/components/layout/mobile-sidebar"
@@ -34,6 +34,7 @@ export default async function AppLayout({
     { href: '/disclosures', icon: Globe, label: 'Disclosures' },
     { href: '/training', icon: GraduationCap, label: 'Training' },
     { href: '/consent', icon: UserCheck, label: 'Consent' },
+    { href: '/compliance-packet', icon: FolderCheck, label: 'Audit Packet' },
   ]
 
   return (
