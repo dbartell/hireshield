@@ -60,37 +60,81 @@ export default function IllinoisCompliancePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold mb-8">What You Need to Know</h2>
           
-          <div className="prose prose-lg max-w-none">
-            <h3>Overview</h3>
-            <p>
-              Illinois HB 3773 amends the Illinois Human Rights Act to regulate the use of artificial intelligence in employment decisions. The law prohibits employers from using AI in ways that discriminate against employees based on protected characteristics.
-            </p>
+          <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="text-gray-600">
+                Illinois HB 3773 amends the Illinois Human Rights Act to regulate the use of artificial intelligence in employment decisions. The law prohibits employers from using AI in ways that discriminate against employees based on protected characteristics.
+              </CardContent>
+            </Card>
 
-            <h3>Key Requirements</h3>
-            <ul>
-              <li><strong>Notice Requirement:</strong> Employers must notify employees when AI is used for employment decisions including hiring, promotion, discipline, or termination.</li>
-              <li><strong>Non-Discrimination:</strong> AI systems cannot be used in ways that discriminate based on race, color, religion, national origin, ancestry, age, sex, marital status, disability, military status, sexual orientation, or other protected classes.</li>
-              <li><strong>Zip Code Prohibition:</strong> Employers cannot use zip code as a proxy for protected characteristics in AI hiring tools.</li>
-              <li><strong>Disclosure Requirements:</strong> Must disclose the AI system's name, purpose, and what data is collected.</li>
-            </ul>
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Requirements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Notice Requirement</div>
+                      <div className="text-gray-600">Employers must notify employees when AI is used for employment decisions including hiring, promotion, discipline, or termination.</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Non-Discrimination</div>
+                      <div className="text-gray-600">AI systems cannot be used in ways that discriminate based on race, color, religion, national origin, ancestry, age, sex, marital status, disability, military status, sexual orientation, or other protected classes.</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Zip Code Prohibition</div>
+                      <div className="text-gray-600">Employers cannot use zip code as a proxy for protected characteristics in AI hiring tools.</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold">Disclosure Requirements</div>
+                      <div className="text-gray-600">Must disclose the AI system's name, purpose, and what data is collected.</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <h3>Who Must Comply</h3>
-            <p>
-              The law applies to any employer with one or more employees in Illinois during 20 or more calendar weeks. This means virtually every business operating in Illinois is covered.
-            </p>
+            <Card>
+              <CardHeader>
+                <CardTitle>Who Must Comply</CardTitle>
+              </CardHeader>
+              <CardContent className="text-gray-600">
+                The law applies to any employer with one or more employees in Illinois during 20 or more calendar weeks. This means virtually every business operating in Illinois is covered.
+              </CardContent>
+            </Card>
 
-            <h3>What Counts as "AI"</h3>
-            <p>
-              The law defines AI broadly to include any machine-based system that makes predictions, recommendations, or decisions influencing real or virtual environments. This includes:
-            </p>
-            <ul>
-              <li>Resume screening software</li>
-              <li>Candidate ranking algorithms</li>
-              <li>Video interview analysis tools</li>
-              <li>Skills assessment platforms</li>
-              <li>Chatbot screening tools</li>
-              <li>Any ATS with AI-powered features</li>
-            </ul>
+            <Card>
+              <CardHeader>
+                <CardTitle>What Counts as "AI"</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  The law defines AI broadly to include any machine-based system that makes predictions, recommendations, or decisions influencing real or virtual environments. This includes:
+                </p>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {["Resume screening software", "Candidate ranking algorithms", "Video interview analysis tools", "Skills assessment platforms", "Chatbot screening tools", "Any ATS with AI-powered features"].map((item) => (
+                    <div key={item} className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
+                      <CheckCircle className="w-4 h-4 text-blue-600" />
+                      <span className="text-gray-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -125,6 +169,20 @@ export default function IllinoisCompliancePage() {
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold mb-8">Penalties for Non-Compliance</h2>
+          
+          {/* Per-Employee Warning Callout */}
+          <div className="bg-red-600 text-white rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <AlertTriangle className="w-8 h-8 flex-shrink-0" />
+              <div>
+                <h3 className="text-xl font-bold mb-2">Fined Per Employee</h3>
+                <p className="text-red-100">
+                  Each affected employee can file a separate complaint. A company with 100 employees in Illinois could face 100+ individual civil rights charges—exposure scales directly with your headcount.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
               <CardTitle className="text-red-800">Civil Rights Violations</CardTitle>
@@ -140,9 +198,6 @@ export default function IllinoisCompliancePage() {
                 <li>Request injunctive relief</li>
                 <li>Recover attorney's fees</li>
               </ul>
-              <p className="mt-4 font-semibold">
-                Each affected employee can file a separate complaint, meaning exposure scales with company size.
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -184,6 +239,124 @@ export default function IllinoisCompliancePage() {
                 Check Your Illinois Compliance <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-4">Illinois Compliance Pricing</h2>
+            <p className="text-gray-600">Get compliant before the January 1, 2026 deadline</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Starter</CardTitle>
+                <p className="text-sm text-gray-500">&lt;50 employees</p>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">$99</span>
+                  <span className="text-gray-600">/mo</span>
+                </div>
+                <p className="text-xs text-green-600 mt-2">Illinois-only pricing — no audits required</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Disclosure notice generator
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Job posting templates
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Employee notification tools
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    HR training + certificates
+                  </li>
+                </ul>
+                <Link href="/quiz">
+                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
+                </Link>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-blue-600 border-2 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
+                Most Popular
+              </div>
+              <CardHeader>
+                <CardTitle>Growth</CardTitle>
+                <p className="text-sm text-gray-500">50-250 employees</p>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">$199</span>
+                  <span className="text-gray-600">/mo</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Everything in Starter
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Multi-location support
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Team management
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Priority support
+                  </li>
+                </ul>
+                <Link href="/quiz">
+                  <Button className="w-full mt-6" variant="cta">Get Started</Button>
+                </Link>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Multi-State</CardTitle>
+                <p className="text-sm text-gray-500">IL + other states</p>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">$349</span>
+                  <span className="text-gray-600">/mo</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Everything in Growth
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    CA, CO, NYC coverage
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Impact assessments
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Audit prep tools
+                  </li>
+                </ul>
+                <Link href="/quiz">
+                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

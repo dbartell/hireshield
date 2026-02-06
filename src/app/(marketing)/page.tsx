@@ -50,8 +50,9 @@ export default function HomePage() {
               <div className="text-gray-600">Illinois HB 3773</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-red-600">Feb 1, 2026</div>
+              <div className="text-3xl font-bold text-red-600">Jun 30, 2026</div>
               <div className="text-gray-600">Colorado AI Act</div>
+              <div className="text-xs text-gray-500 mt-1">Extended from Feb 1</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-red-600">$7,500</div>
@@ -230,149 +231,6 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Pricing Preview */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-xl text-gray-600">
-              Plans for every company size. No hidden fees.
-            </p>
-          </div>
-          
-          {/* Monthly plans */}
-          <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>Starter</CardTitle>
-                <CardDescription>&lt;50 employees</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$149</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Compliance dashboard
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Training + certificates
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Document generator
-                  </li>
-                </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-blue-600 border-2 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
-                Most Popular
-              </div>
-              <CardHeader>
-                <CardTitle>Growth</CardTitle>
-                <CardDescription>50-250 employees</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$349</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Everything in Starter
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    ATS integrations
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Multi-state coverage
-                  </li>
-                </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="cta">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Scale</CardTitle>
-                <CardDescription>250-1000 employees</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$749</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Everything in Growth
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Unlimited states
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Dedicated CSM
-                  </li>
-                </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Enterprise</CardTitle>
-                <CardDescription>1000+ employees</CardDescription>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$2,499</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Everything in Scale
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    SSO + custom SLA
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Dedicated team
-                  </li>
-                </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="outline">Contact Sales</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-          <p className="text-center text-gray-600 mt-8">
-            <Link href="/quiz" className="text-blue-600 hover:underline">Get your personalized quote →</Link>
-          </p>
         </div>
       </section>
 
