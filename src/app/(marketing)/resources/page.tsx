@@ -13,6 +13,13 @@ const featuredPosts = [
     featured: true,
   },
   {
+    title: "Illinois AI Hiring Law: AIVIA Compliance Guide 2026",
+    description: "Everything you need to know about AIVIA compliance — disclosure requirements, consent rules, penalties, and a step-by-step checklist.",
+    category: "Compliance Guide",
+    readTime: "10 min read",
+    href: "/resources/illinois-aivia-compliance-guide",
+  },
+  {
     title: "Illinois AI Hiring Law (HB 3773): Everything Employers Need to Know",
     description: "Effective January 1, 2026. Here's what Illinois employers must do to stay compliant.",
     category: "State Law",
