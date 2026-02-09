@@ -17,6 +17,7 @@ import {
 import { TaskHeader } from "@/components/task-header"
 import { TaskCompletionModal } from "@/components/task-completion-modal"
 import { useNextTask } from "@/hooks/use-next-task"
+import { useStateContext } from "@/lib/state-context"
 
 interface DisclosurePage {
   id: string
@@ -44,6 +45,9 @@ export default function DisclosuresPage() {
   const [showEmbed, setShowEmbed] = useState(false)
   const [showCompletion, setShowCompletion] = useState(false)
   const { nextTask } = useNextTask('disclosure-page')
+  
+  // Get current state from context (state-as-product architecture)
+  const { currentState, stateName } = useStateContext()
 
   useEffect(() => {
     loadPage()
@@ -448,15 +452,18 @@ export default function DisclosuresPage() {
         )}
       </div>
 
-      {/* Compliance Note */}
+      {/* Compliance Note - State-specific messaging */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-start gap-3">
           <Scale className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-blue-800">Why this matters</p>
+            <p className="text-sm font-medium text-blue-800">Why this matters for {stateName}</p>
             <p className="text-sm text-blue-700 mt-1">
-              NYC Local Law 144 requires publishing bias audit results. Illinois HB 3773 and other states 
-              require disclosing AI use in hiring. This page helps you meet these requirements.
+              {currentState === 'IL' && 'Illinois HB 3773 requires employers to disclose AI use in employment decisions. This page helps you meet that requirement.'}
+              {currentState === 'NYC' && 'NYC Local Law 144 requires publishing bias audit results on a public webpage. This disclosure page fulfills that requirement.'}
+              {currentState === 'CO' && 'Colorado AI Act requires pre-decision notification to candidates about AI use. This page helps demonstrate compliance.'}
+              {currentState === 'CA' && 'California CCPA ADMT rules require explaining AI purpose and opt-out rights. Use this page to communicate with candidates.'}
+              {!['IL', 'NYC', 'CO', 'CA'].includes(currentState) && 'A public disclosure of your AI hiring practices is a best practice for transparency and may be required as regulations expand.'}
             </p>
           </div>
         </div>

@@ -247,116 +247,73 @@ export default function IllinoisCompliancePage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold mb-4">Illinois Compliance Pricing</h2>
-            <p className="text-gray-600">Get compliant before the January 1, 2026 deadline</p>
+            <h2 className="text-3xl font-bold mb-4">Illinois Compliance — One Simple Price</h2>
+            <p className="text-gray-600">Get compliant today. No subscription required.</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Starter</CardTitle>
-                <p className="text-sm text-gray-500">&lt;50 employees</p>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$99</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-                <p className="text-xs text-green-600 mt-2">Illinois-only pricing — no audits required</p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Disclosure notice generator
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Job posting templates
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Employee notification tools
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    HR training + certificates
-                  </li>
-                </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
+          <div className="max-w-lg mx-auto">
             <Card className="border-blue-600 border-2 relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
-                Most Popular
+                One-Time Payment
               </div>
-              <CardHeader>
-                <CardTitle>Growth</CardTitle>
-                <p className="text-sm text-gray-500">50-250 employees</p>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Illinois Compliance Kit</CardTitle>
+                <p className="text-gray-500">Everything you need to comply with HB 3773</p>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold">$199</span>
-                  <span className="text-gray-600">/mo</span>
+                  <span className="text-5xl font-bold">$199</span>
+                  <span className="text-gray-600 ml-2">one-time</span>
                 </div>
+                <p className="text-sm text-green-600 mt-2">No monthly fees. No subscriptions. Just compliance.</p>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-3 text-sm mb-6">
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Everything in Starter
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>All required disclosure notices (employee + candidate)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Multi-location support
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Job posting disclosure templates</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Team management
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Employee handbook AI policy</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Priority support
-                  </li>
-                </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="cta">Get Started</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Multi-State</CardTitle>
-                <p className="text-sm text-gray-500">IL + other states</p>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">$349</span>
-                  <span className="text-gray-600">/mo</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Everything in Growth
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>4-year recordkeeping system</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    CA, CO, NYC coverage
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Downloadable compliance packet (PDF)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Impact assessments
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>1 year of regulatory update emails</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Audit prep tools
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>30-day email support</span>
                   </li>
                 </ul>
-                <Link href="/quiz">
-                  <Button className="w-full mt-6" variant="outline">Get Started</Button>
+                <Link href="/quiz?state=IL">
+                  <Button className="w-full h-12 text-base" variant="cta">
+                    Get Illinois Compliant — $199
+                  </Button>
                 </Link>
+                <p className="text-xs text-center text-gray-500 mt-4">
+                  Takes about 30 minutes. No credit card until checkout.
+                </p>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Multi-state upsell */}
+          <div className="mt-10 text-center">
+            <p className="text-gray-600 mb-2">Hiring in multiple states?</p>
+            <Link href="/quiz" className="text-blue-600 hover:underline font-medium">
+              See multi-state plans starting at $199/month →
+            </Link>
           </div>
         </div>
       </section>

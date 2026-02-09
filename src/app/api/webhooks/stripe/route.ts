@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { stripe, PRICES } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+
+// One-time purchase status mapping
+const ONE_TIME_STATUS_MAP: Record<string, string> = {
+  [process.env.STRIPE_PRICE_IL_ONLY || '']: 'il_only',
+}
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,11 +38,30 @@ export async function POST(req: NextRequest) {
           (await getCustomerUserId(session.customer as string))
 
         if (userId) {
-          await supabaseAdmin.from('organizations').update({
-            subscription_status: 'active',
-            subscription_id: session.subscription as string,
-            subscription_started_at: new Date().toISOString(),
-          }).eq('id', userId)
+          // Check if this is a one-time payment or subscription
+          if (session.mode === 'payment') {
+            // One-time payment (e.g., IL-only)
+            const priceId = session.metadata?.price_id || ''
+            const status = ONE_TIME_STATUS_MAP[priceId] || 'lifetime'
+            
+            // Calculate expiry (1 year from now for updates access)
+            const expiresAt = new Date()
+            expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+            
+            await supabaseAdmin.from('organizations').update({
+              subscription_status: status,
+              subscription_started_at: new Date().toISOString(),
+              one_time_purchase: true,
+              one_time_expires_at: expiresAt.toISOString(),
+            }).eq('id', userId)
+          } else {
+            // Subscription payment
+            await supabaseAdmin.from('organizations').update({
+              subscription_status: 'active',
+              subscription_id: session.subscription as string,
+              subscription_started_at: new Date().toISOString(),
+            }).eq('id', userId)
+          }
         }
         // Note: For guest checkout, user may not exist yet - set-password will handle org creation
         break

@@ -1,9 +1,10 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, UserCheck, Settings, Globe, Trash2, FolderCheck } from "lucide-react"
+import { Shield, LayoutDashboard, ClipboardCheck, FileText, GraduationCap, UserCheck, Settings, Globe, Trash2, FolderCheck, MapPin } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { MobileSidebar } from "@/components/layout/mobile-sidebar"
+import { StateProvider, getStateName } from "@/lib/state-context"
 
 export default async function AppLayout({
   children,
@@ -17,15 +18,18 @@ export default async function AppLayout({
     redirect('/login')
   }
 
-  // Get organization info
+  // Get organization info including state-as-product fields
   const { data: org } = await supabase
     .from('organizations')
-    .select('name')
+    .select('name, primary_state, active_states')
     .eq('id', user.id)
     .single()
 
   const orgName = org?.name || 'Your Company'
   const userEmail = user.email || ''
+  const primaryState = org?.primary_state || 'IL'
+  const activeStates = org?.active_states || ['IL']
+  const stateName = getStateName(primaryState)
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -51,6 +55,15 @@ export default async function AppLayout({
             </div>
             <span className="font-bold text-lg">AI Hire Law</span>
           </Link>
+        </div>
+        
+        {/* State Badge - Shows active state for state-as-product */}
+        <div className="px-3 py-3 border-b border-gray-800">
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+            <span className="text-lg">🏛️</span>
+            <span className="text-sm font-medium text-blue-300">{stateName}</span>
+            <span className="ml-auto text-xs bg-blue-600/50 text-blue-200 px-1.5 py-0.5 rounded">Active</span>
+          </div>
         </div>
         
         <nav className="flex-1 p-3 overflow-y-auto">
@@ -98,7 +111,9 @@ export default async function AppLayout({
       
       {/* Main content - offset for desktop sidebar */}
       <main className="flex-1 bg-gray-50 md:ml-56">
-        {children}
+        <StateProvider initialState={primaryState} initialAvailableStates={activeStates}>
+          {children}
+        </StateProvider>
       </main>
     </div>
   )

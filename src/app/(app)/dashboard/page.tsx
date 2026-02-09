@@ -371,7 +371,7 @@ export default function DashboardPage() {
 
       // Parallel fetch all data (re-fetch org after potential bootstrap)
       const [orgRes, docsRes, disclosureRes, trainingCompleteRes, trainingTotalRes, auditsRes, consentsRes, hiringStatesRes, leadsRes] = await Promise.all([
-        supabase.from('organizations').select('name, states, subscription_status, trial_started_at, documents_generated').eq('id', orgId).single(),
+        supabase.from('organizations').select('name, states, primary_state, active_states, subscription_status, trial_started_at, documents_generated').eq('id', orgId).single(),
         supabase.from('documents').select('doc_type').eq('org_id', orgId),
         supabase.from('disclosure_pages').select('is_published').eq('organization_id', orgId).single(),
         supabase.from('training_assignments').select('*', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'completed'),
@@ -387,11 +387,24 @@ export default function DashboardPage() {
       const leadRiskScore = leadsRes.data?.[0]?.risk_score ?? null
       const riskScore = auditRiskScore ?? leadRiskScore
 
-      // Get states from org, fall back to hiring_states table, then leads table
+      // Get primary state from org, fall back to first hiring state, then first lead state, then 'IL'
+      // For state-as-product architecture, we filter to a SINGLE state
+      const orgPrimaryState = orgRes.data?.primary_state
       const orgStates = orgRes.data?.states || []
       const hiringStates = hiringStatesRes.data?.map(s => s.state_code) || []
       const leadStates = leadsRes.data?.[0]?.states || []
-      const states = orgStates.length > 0 ? orgStates : (hiringStates.length > 0 ? hiringStates : leadStates)
+      
+      // Determine the single active state for dashboard view
+      let primaryState = orgPrimaryState
+      if (!primaryState) {
+        primaryState = orgStates[0] || hiringStates[0] || leadStates[0] || 'IL'
+      }
+      
+      // For backward compatibility, keep the full states array for other uses
+      const allStates = orgStates.length > 0 ? orgStates : (hiringStates.length > 0 ? hiringStates : leadStates)
+      
+      // Dashboard shows only the primary/active state
+      const states = primaryState ? [primaryState] : (allStates.length > 0 ? [allStates[0]] : ['IL'])
 
       setData({
         orgName: orgRes.data?.name || 'Your Company',

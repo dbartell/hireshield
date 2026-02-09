@@ -10,6 +10,7 @@ import { saveAudit, getAuditHistory, getOrganizationData } from "@/lib/actions/a
 import Link from "next/link"
 import { CalendlyCTA, ContextualHelp } from "@/components/calendly-cta"
 import { AuditResultsHelp, RiskScoreHelp, StateLawsHelp } from "@/components/help-content"
+import { useStateContext } from "@/lib/state-context"
 
 type AuditStep = 'states' | 'tools' | 'usage' | 'results'
 type ViewMode = 'loading' | 'wizard' | 'results'
@@ -54,6 +55,9 @@ export default function AuditPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [auditHistory, setAuditHistory] = useState<AuditRecord[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  
+  // Get current state from context (state-as-product architecture)
+  const { currentState, stateName } = useStateContext()
 
   // Load org data on mount
   useEffect(() => {
@@ -66,16 +70,19 @@ export default function AuditPage() {
     setOrgData(org)
     
     // If org has states and tools, auto-populate and show results
-    if (org?.states?.length && org?.tools?.length) {
+    // State-as-product: use currentState if available, otherwise fall back to org states
+    const statesToUse = currentState ? [currentState] : (org?.states || [])
+    
+    if (statesToUse.length && org?.tools?.length) {
       setData({
-        states: org.states,
+        states: statesToUse,
         tools: org.tools,
         usages: ['screening', 'ranking'] // Default common usages
       })
       setViewMode('results')
-    } else if (org?.states?.length) {
+    } else if (statesToUse.length) {
       // Has states but no tools - prefill states, go to tools step
-      setData(prev => ({ ...prev, states: org.states || [] }))
+      setData(prev => ({ ...prev, states: statesToUse }))
       setStep('tools')
       setViewMode('wizard')
     } else {

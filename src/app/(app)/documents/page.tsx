@@ -21,6 +21,7 @@ import {
   getOrganizationInfo 
 } from "@/lib/actions/documents"
 import { trackEvent } from "@/components/GoogleAnalytics"
+import { useStateContext } from "@/lib/state-context"
 
 // Document type configuration with behaviors
 type DocumentBehavior = 'singleton' | 'versioned' | 'multiple'
@@ -708,6 +709,9 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null)
   
+  // Get current state from context (state-as-product architecture)
+  const { currentState, stateName } = useStateContext()
+  
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
   const [modalDocType, setModalDocType] = useState<DocumentTypeConfig | null>(null)
@@ -732,9 +736,9 @@ export default function DocumentsPage() {
     setLoading(false)
   }
 
-  // Filter documents by user's states
-  const userStates = orgInfo?.states || []
-  const filteredDocTypes = userStates.length > 0
+  // Filter documents by current state (state-as-product: show only active state's documents)
+  const userStates = [currentState]
+  const filteredDocTypes = userStates.length > 0 && userStates[0]
     ? documentTypes.filter(dt => dt.states.some(s => userStates.includes(s)))
     : documentTypes
 
@@ -813,15 +817,15 @@ export default function DocumentsPage() {
           <DocumentsHelp />
         </h1>
         <p className="text-gray-600 mt-1">
-          {userStates.length > 0 
-            ? `Documents required for your compliance in ${userStates.join(', ')}`
+          {currentState 
+            ? `Documents required for ${stateName} compliance`
             : 'Generate compliance documents for your organization'
           }
         </p>
       </div>
 
       {/* No states warning */}
-      {userStates.length === 0 && (
+      {!currentState && (
         <Card className="mb-6 border-yellow-200 bg-yellow-50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">

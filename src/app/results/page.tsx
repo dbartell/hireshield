@@ -264,6 +264,7 @@ export default function PreviewPage() {
       trialDaysRemaining: 0,
       documentsGenerated: 0,
       isSubscribed: false,
+      states: data?.states || [],
     })
     setShowPaywall(true)
   }

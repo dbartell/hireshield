@@ -28,12 +28,24 @@ export const stripe = {
 
 // Price IDs from Stripe Dashboard
 export const PRICES = {
+  // Subscriptions
   STARTER: process.env.STRIPE_PRICE_STARTER!,
   GROWTH: process.env.STRIPE_PRICE_GROWTH!,
   SCALE: process.env.STRIPE_PRICE_SCALE!,
   ENTERPRISE: process.env.STRIPE_PRICE_ENTERPRISE!,
+  // One-time payments
+  IL_ONLY: process.env.STRIPE_PRICE_IL_ONLY!,
   // Aliases for backwards compat
   PILOT: process.env.STRIPE_PRICE_STARTER!,
 } as const
+
+// One-time price IDs (not subscriptions)
+export const ONE_TIME_PRICES = [
+  process.env.STRIPE_PRICE_IL_ONLY!,
+] as const
+
+export function isOneTimePrice(priceId: string): boolean {
+  return ONE_TIME_PRICES.includes(priceId as any)
+}
 
 export type PriceId = (typeof PRICES)[keyof typeof PRICES]

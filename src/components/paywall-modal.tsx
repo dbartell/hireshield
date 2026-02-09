@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { X, Sparkles, Check, Loader2, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { PaywallStatus, getPaywallMessage } from "@/lib/paywall"
+import { PaywallStatus, getPaywallMessage, getPricingInfo, isIllinoisOnly } from "@/lib/paywall"
+import { PRICES } from "@/lib/stripe"
 import { trackEvent } from "@/components/GoogleAnalytics"
 
 interface PaywallModalProps {
@@ -14,12 +15,25 @@ interface PaywallModalProps {
   isGuest?: boolean
 }
 
-const FEATURES = [
+// Features for IL-only (one-time)
+const IL_FEATURES = [
+  "All required disclosure notices",
+  "Job posting templates",
+  "Employee handbook policy",
+  "4-year recordkeeping system",
+  "Downloadable compliance packet",
+  "1 year of regulatory updates",
+  "30-day email support",
+]
+
+// Features for multi-state (subscription)
+const MULTI_STATE_FEATURES = [
   "Unlimited compliance documents",
+  "IL + CO + CA + NYC coverage",
+  "Impact assessments (Colorado)",
   "Team training & certificates",
-  "ATS integrations",
   "Consent tracking",
-  "Quarterly audit reminders",
+  "Annual renewal reminders",
   "Priority support",
 ]
 
@@ -31,6 +45,11 @@ export function PaywallModal({ status, onClose, onUpgrade, isGuest }: PaywallMod
   const [guestEmail, setGuestEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const message = getPaywallMessage(status)
+  
+  // Get pricing based on selected states
+  const states = status.states || []
+  const pricing = getPricingInfo(states)
+  const features = isIllinoisOnly(states) ? IL_FEATURES : MULTI_STATE_FEATURES
 
   // Pre-fill email from localStorage for guests
   useEffect(() => {
@@ -75,10 +94,13 @@ export function PaywallModal({ status, onClose, onUpgrade, isGuest }: PaywallMod
           } catch (e) { /* ignore */ }
         }
 
+        // Use the correct price ID based on state selection
+        const priceId = pricing.priceId === 'IL_ONLY' ? PRICES.IL_ONLY : PRICES.STARTER
+
         const res = await fetch('/api/checkout/guest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: guestEmail, ...quizData }),
+          body: JSON.stringify({ email: guestEmail, priceId, ...quizData }),
         })
 
         const data = await res.json()
@@ -153,11 +175,20 @@ export function PaywallModal({ status, onClose, onUpgrade, isGuest }: PaywallMod
           <p className="text-white/90">{message.description}</p>
         </div>
 
+        {/* Pricing */}
+        <div className="px-6 pt-6 pb-2 text-center border-b">
+          <div className="text-4xl font-bold text-gray-900">
+            {pricing.price}
+            <span className="text-lg font-normal text-gray-500 ml-1">{pricing.label}</span>
+          </div>
+          <p className="text-sm text-gray-500 mt-1">{pricing.description}</p>
+        </div>
+
         {/* Features */}
-        <div className="px-6 py-6">
-          <p className="text-sm font-medium text-gray-700 mb-3">Everything you need:</p>
+        <div className="px-6 py-4">
+          <p className="text-sm font-medium text-gray-700 mb-3">What's included:</p>
           <ul className="space-y-2">
-            {FEATURES.map((feature, i) => (
+            {features.map((feature, i) => (
               <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
                 <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                 {feature}
@@ -194,8 +225,10 @@ export function PaywallModal({ status, onClose, onUpgrade, isGuest }: PaywallMod
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Loading...
               </>
+            ) : pricing.isOneTime ? (
+              `Get Compliant — ${pricing.price}`
             ) : (
-              message.ctaText
+              `Start Now — ${pricing.price}${pricing.label}`
             )}
           </Button>
 

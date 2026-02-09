@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Shield, ArrowRight, ArrowLeft, AlertTriangle, Loader2, Search, Globe, Plus } from 'lucide-react'
 import { trackEvent } from '@/components/GoogleAnalytics'
 import { Button } from '@/components/ui/button'
@@ -73,13 +73,15 @@ function calculateRiskScore(data: OnboardData): number {
 // LocalStorage key for onboard data
 const ONBOARD_STORAGE_KEY = 'hireshield_onboard_progress'
 
-export default function OnboardPage() {
+function OnboardPageContent() {
   const [step, setStep] = useState<Step>('states')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toolSearch, setToolSearch] = useState('')
   const [isLoaded, setIsLoaded] = useState(false)
+  const [stateFromUrl, setStateFromUrl] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   
   const [data, setData] = useState<OnboardData>({
     states: [],
@@ -92,8 +94,26 @@ export default function OnboardPage() {
     industry: ''
   })
 
-  // Load saved progress from localStorage on mount
+  // Check for state URL parameter and skip state selection if present
   useEffect(() => {
+    const stateParam = searchParams.get('state')
+    if (stateParam) {
+      // Validate the state code exists
+      const validState = allStates.find(s => s.code === stateParam.toUpperCase())
+      if (validState) {
+        setStateFromUrl(validState.code)
+        setData(prev => ({
+          ...prev,
+          states: [validState.code]
+        }))
+        // Skip directly to tools step
+        setStep('tools')
+        setIsLoaded(true)
+        return
+      }
+    }
+    
+    // Normal flow - load saved progress from localStorage
     const saved = localStorage.getItem(ONBOARD_STORAGE_KEY)
     if (saved) {
       try {
@@ -119,7 +139,7 @@ export default function OnboardPage() {
       }
     }
     setIsLoaded(true)
-  }, [])
+  }, [searchParams])
 
   // Save progress to localStorage on data change
   useEffect(() => {
@@ -233,8 +253,12 @@ export default function OnboardPage() {
     }
   }
 
-  const progress = ['states', 'tools', 'usage', 'employees', 'email'].indexOf(step) + 1
-  const totalSteps = 5
+  // If we came from a state URL param, we skip the states step
+  const steps = stateFromUrl 
+    ? ['tools', 'usage', 'employees', 'email'] 
+    : ['states', 'tools', 'usage', 'employees', 'email']
+  const progress = steps.indexOf(step) + 1
+  const totalSteps = steps.length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -435,12 +459,15 @@ export default function OnboardPage() {
               })()}
               
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => goToStep('states')} className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                  <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                </Button>
+                {/* Only show Back button if we didn't come from a state URL param */}
+                {!stateFromUrl && (
+                  <Button variant="outline" onClick={() => goToStep('states')} className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                    <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                  </Button>
+                )}
                 <Button 
                   onClick={() => goToStep('usage')} 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className={`${stateFromUrl ? 'w-full' : 'flex-1'} bg-blue-600 hover:bg-blue-700 text-white`}
                   disabled={data.tools.length === 0 && !data.customTool.trim()}
                 >
                   Continue <ArrowRight className="ml-2 w-4 h-4" />
@@ -636,5 +663,19 @@ export default function OnboardPage() {
 
       </div>
     </div>
+  )
+}
+
+
+// Wrapper component with Suspense boundary for useSearchParams
+export default function OnboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    }>
+      <OnboardPageContent />
+    </Suspense>
   )
 }

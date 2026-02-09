@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, PRICES } from '@/lib/stripe'
+import { getStripe, PRICES, isOneTimePrice } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +13,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { priceId = PRICES.PILOT } = await req.json()
+    const isOneTime = isOneTimePrice(priceId)
+    const stripe = getStripe()
 
     // Get or create Stripe customer
     const { data: profile } = await supabase
@@ -39,10 +42,10 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id)
     }
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Create checkout session - different config for one-time vs subscription
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
-      mode: 'subscription',
+      mode: isOneTime ? 'payment' : 'subscription',
       payment_method_types: ['card'],
       line_items: [
         {
@@ -52,13 +55,23 @@ export async function POST(req: NextRequest) {
       ],
       success_url: `${req.nextUrl.origin}/dashboard?checkout=success`,
       cancel_url: `${req.nextUrl.origin}/quiz?checkout=cancelled`,
-      subscription_data: {
+      allow_promotion_codes: true,
+      metadata: {
+        supabase_user_id: user.id,
+        price_id: priceId,
+      },
+    }
+
+    // Add subscription-specific metadata
+    if (!isOneTime) {
+      sessionParams.subscription_data = {
         metadata: {
           supabase_user_id: user.id,
         },
-      },
-      allow_promotion_codes: true,
-    })
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
 
     return NextResponse.json({ url: session.url })
   } catch (error) {

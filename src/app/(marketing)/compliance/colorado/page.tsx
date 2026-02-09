@@ -200,10 +200,84 @@ export default function ColoradoCompliancePage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Pricing */}
       <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-4">Colorado Compliance Pricing</h2>
+            <p className="text-gray-600">Impact assessments, notifications, and ongoing support</p>
+          </div>
+          
+          <div className="max-w-lg mx-auto">
+            <Card className="border-blue-600 border-2 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
+                Multi-State Plan
+              </div>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Full Compliance Platform</CardTitle>
+                <p className="text-gray-500">Colorado + Illinois + California + NYC</p>
+                <div className="mt-4">
+                  <span className="text-5xl font-bold">$199</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm mb-6">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Annual impact assessment generator</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Risk management documentation</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Consumer notification templates</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Adverse decision workflow tools</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Team training + certificates</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Multi-state disclosure templates</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>Annual renewal reminders</span>
+                  </li>
+                </ul>
+                <Link href="/quiz?state=CO">
+                  <Button className="w-full h-12 text-base" variant="cta">
+                    Start Free Trial
+                  </Button>
+                </Link>
+                <p className="text-xs text-center text-gray-500 mt-4">
+                  14-day free trial. No credit card required.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* IL-only callout */}
+          <div className="mt-10 text-center">
+            <p className="text-gray-600 mb-2">Only hiring in Illinois?</p>
+            <Link href="/compliance/illinois" className="text-blue-600 hover:underline font-medium">
+              Get the $199 one-time Illinois kit →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Get Ahead of the February Deadline</h2>
+          <h2 className="text-3xl font-bold mb-4">Get Ahead of the June Deadline</h2>
           <p className="text-xl text-gray-600 mb-8">
             Colorado's requirements are extensive. Start your compliance journey today.
           </p>
